@@ -36,12 +36,12 @@ const WelcomePopup: React.FC<WelcomePopupProps> = ({ isOpen, onClose, visitorNum
           {/* Welcome message */}
           <div className="space-y-4">
             <h2 className="text-2xl font-bold text-white mb-2">
-              👋 Welcome to <span className="bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">MCBE Tiers</span>, dear.
+              👋 Welcome to <span className="bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">MCBE Tiers</span>.
             </h2>
             
             <p className="text-gray-300 text-sm leading-relaxed">
               This tier list was created by{' '}
-              <span className="text-purple-400 font-semibold">Jamal Hussain</span> and{' '}
+              <span className="text-purple-400 font-semibold">qou2</span> and{' '}
               <span className="text-blue-400 font-semibold">Swaify</span>.
             </p>
 
