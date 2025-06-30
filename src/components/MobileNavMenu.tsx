@@ -1,79 +1,78 @@
 "use client"
+import { ChevronDown, Menu } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { GameModeIcon } from "./GameModeIcon"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { useNavigate } from "react-router-dom"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 interface MobileNavMenuProps {
-  isOpen: boolean
-  onClose: () => void
-  selectedMode: string
-  onSelectMode: (mode: string) => void
-  navigate: (path: string) => void
+  currentMode: string
 }
 
-export function MobileNavMenu({ isOpen, onClose, selectedMode, onSelectMode, navigate }: MobileNavMenuProps) {
+export function MobileNavMenu({ currentMode = "overall" }: MobileNavMenuProps) {
+  const navigate = useNavigate()
+  const isMobile = useIsMobile()
+
+  // EDIT THIS ARRAY TO CHANGE MOBILE MENU GAMEMODES
   const gameModes = [
-    { id: "overall", label: "Overall" },
-    { id: "Skywars", label: "Skywars" },
-    { id: "Midfight", label: "Midfight" },
-    { id: "Bridge", label: "Bridge" },
-    { id: "Crystal", label: "Crystal" },
-    { id: "Sumo", label: "Sumo" },
-    { id: "Nodebuff", label: "Nodebuff" },
-    { id: "Bedfight", label: "Bedfight" },
+    { value: "overall", label: "Overall" },
+    { value: "skywars", label: "Skywars" },
+    { value: "midfight", label: "Midfight" },
+    { value: "bridge", label: "Bridge" },
+    { value: "crystal", label: "Crystal" },
+    { value: "sumo", label: "Sumo" },
+    { value: "nodebuff", label: "Nodebuff" },
+    { value: "bedfight", label: "Bedfight" },
   ]
 
-  if (!isOpen) return null
-
-  const handleModeSelect = (mode: string) => {
-    onSelectMode(mode)
-    onClose()
+  const handleModeChange = (mode: string) => {
+    if (mode === "overall") {
+      navigate("/")
+    } else {
+      navigate(`/${mode}`)
+    }
   }
 
-  return (
-    <div className="md:hidden bg-black/90 border-t border-white/10">
-      <div className="px-4 py-4 space-y-2">
-        {gameModes.map((mode) => (
-          <Button
-            key={mode.id}
-            variant={selectedMode === mode.id ? "default" : "ghost"}
-            size="sm"
-            onClick={() => handleModeSelect(mode.id)}
-            className={`w-full justify-start gap-2 ${
-              selectedMode === mode.id
-                ? "bg-blue-600 hover:bg-blue-700 text-white"
-                : "text-gray-300 hover:text-white hover:bg-white/10"
-            }`}
-          >
-            {mode.id !== "overall" && <GameModeIcon mode={mode.id.toLowerCase()} className="h-4 w-4" />}
-            {mode.label}
-          </Button>
-        ))}
+  const getCurrentModeLabel = () => {
+    const mode = currentMode?.toLowerCase() || "overall"
+    const found = gameModes.find((gameMode) => gameMode.value === mode)
+    return found ? found.label : "Select Mode"
+  }
 
-        <div className="pt-4 border-t border-white/10">
+  if (!isMobile) return null
+
+  return (
+    <div className="w-full flex justify-center my-3 px-4">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
           <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              navigate("/about")
-              onClose()
-            }}
-            className="w-full justify-start text-gray-300 hover:text-white hover:bg-white/10"
+            variant="outline"
+            className="w-full max-w-xs flex items-center justify-between bg-dark-surface/60 border-white/20 text-white hover:bg-dark-surface/80 hover:text-white py-3 h-12"
           >
-            About
+            <div className="flex items-center gap-2">
+              <Menu size={18} />
+              <span className="text-base font-medium">{getCurrentModeLabel()}</span>
+            </div>
+            <ChevronDown size={18} />
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              navigate("/news")
-              onClose()
-            }}
-            className="w-full justify-start text-gray-300 hover:text-white hover:bg-white/10"
-          >
-            News
-          </Button>
-        </div>
-      </div>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent
+          align="center"
+          className="w-[calc(100vw-2rem)] max-w-xs bg-dark-surface/95 border-white/20 backdrop-blur-md"
+        >
+          {gameModes.map((mode) => (
+            <DropdownMenuItem
+              key={mode.value}
+              className={`text-white hover:bg-white/10 focus:bg-white/10 py-3 text-base cursor-pointer ${
+                (currentMode?.toLowerCase() || "overall") === mode.value ? "bg-white/20 font-semibold" : ""
+              }`}
+              onClick={() => handleModeChange(mode.value)}
+            >
+              {mode.label}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   )
 }
