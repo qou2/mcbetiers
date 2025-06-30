@@ -13,7 +13,6 @@ interface TierGridProps {
   onPlayerClick: (player: any) => void
 }
 
-// Helper to get device icon
 const getDeviceIcon = (device = "PC") => {
   switch (device?.toLowerCase()) {
     case "mobile":
