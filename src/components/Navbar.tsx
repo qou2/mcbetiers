@@ -4,7 +4,7 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { GameModeSelector } from "./GameModeSelector"
 import { MobileNavMenu } from "./MobileNavMenu"
-import { Home, Youtube, MessageCircle, Search, Menu, X } from "lucide-react"
+import { Home, Youtube, MessageCircle, Search, Menu, X } from 'lucide-react'
 import { Link } from "react-router-dom"
 import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
@@ -158,14 +158,18 @@ export function Navbar({ selectedMode, onSelectMode, navigate }: NavbarProps) {
             <div className="flex-shrink-0 flex items-center">
               <button
                 onClick={() => navigate("/")}
-                className="flex items-center text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-600 bg-clip-text text-transparent"
+                className="flex items-center"
               >
                 <img
                   src="/lovable-uploads/3bad17d6-7347-46e0-8f33-35534094962f.png"
-                  alt="MCBE TIERS"
+                  alt="Trophy"
                   className={`w-auto mr-2 ${logoHeight}`}
                 />
-                MCBE TIERS
+                <img
+                  src="/lovable-uploads/icon.png"
+                  alt="MCBE TIERS"
+                  className={`w-auto ${logoHeight}`}
+                />
               </button>
             </div>
 
@@ -238,7 +242,7 @@ export function Navbar({ selectedMode, onSelectMode, navigate }: NavbarProps) {
                 </motion.a>
 
                 <motion.a
-                  href="https://discord.gg"
+                  href="https://discord.gg/npDmSF9hCp"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-white/70 hover:text-indigo-400 transition-colors duration-200"
@@ -326,7 +330,7 @@ export function Navbar({ selectedMode, onSelectMode, navigate }: NavbarProps) {
                     <Youtube size={28} />
                   </a>
                   <a
-                    href="https://discord.gg"
+                    href="https://discord.gg/npDmSF9hCp"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-white/70 hover:text-indigo-400 transition-colors duration-200"
