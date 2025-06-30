@@ -1,271 +1,320 @@
-
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from "@/integrations/supabase/client"
 
 export interface AdminApplication {
-  id: string;
-  discord: string;
-  ip_address: string;
-  secret_key: string;
-  requested_role: string;
-  submitted_at: string;
-  status: 'pending' | 'approved' | 'denied';
-  reviewed_at: string | null;
-  reviewed_by: string | null;
+  id: string
+  discord: string
+  ip_address: string
+  secret_key: string
+  requested_role: string
+  submitted_at: string
+  status: "pending" | "approved" | "denied"
+  reviewed_at: string | null
+  reviewed_by: string | null
 }
 
 interface AdminUser {
-  id: string;
-  approved_by: string;
-  role: string;
-  approved_at: string;
+  id: string
+  approved_by: string
+  role: string
+  approved_at: string
 }
 
 interface LoginResult {
-  success: boolean;
-  sessionToken?: string;
-  error?: string;
-  role?: string;
-  needsOnboarding?: boolean;
-  debug?: any[];
+  success: boolean
+  sessionToken?: string
+  error?: string
+  role?: string
+  needsOnboarding?: boolean
+  debug?: any[]
 }
 
 // Clear all authentication state
 export const clearAllAuthState = (): void => {
-  localStorage.removeItem('admin_session_token');
-  localStorage.removeItem('admin_user_role');
-  localStorage.removeItem('admin_role');
-  localStorage.removeItem('admin_ip');
-  localStorage.removeItem('admin_session_active');
-  
-  Object.keys(localStorage).forEach(key => {
-    if (key.includes('admin') || key.includes('auth')) {
-      localStorage.removeItem(key);
-    }
-  });
+  localStorage.removeItem("admin_session_token")
+  localStorage.removeItem("admin_user_role")
+  localStorage.removeItem("admin_role")
+  localStorage.removeItem("admin_ip")
+  localStorage.removeItem("admin_session_active")
 
-  sessionStorage.clear();
-  
-  document.cookie.split(";").forEach(function(c) { 
-    document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
-  });
-};
+  Object.keys(localStorage).forEach((key) => {
+    if (key.includes("admin") || key.includes("auth")) {
+      localStorage.removeItem(key)
+    }
+  })
+
+  sessionStorage.clear()
+
+  document.cookie.split(";").forEach((c) => {
+    document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/")
+  })
+}
 
 export const newAdminService = {
-  async adminLogin(secretKey: string, ipAddress: string): Promise<LoginResult> {
+  async getAuthConfig(): Promise<{ [key: string]: string }> {
     try {
-      const { data: application, error: applicationError } = await supabase
-        .from('admin_applications')
-        .select('*')
-        .eq('secret_key', secretKey)
-        .eq('ip_address', ipAddress)
-        .eq('status', 'approved')
-        .single();
-
-      if (applicationError) {
-        console.error('Application fetch error:', applicationError);
-        return { success: false, error: 'Invalid secret key or IP address.' };
-      }
-
-      if (!application) {
-        return { success: false, error: 'No approved application found.' };
-      }
-
-      const sessionToken = this.generateSessionToken();
-      localStorage.setItem('admin_session_token', sessionToken);
-      localStorage.setItem('admin_user_role', application.requested_role);
-
-      return { success: true, sessionToken: sessionToken, role: application.requested_role };
-    } catch (error: any) {
-      console.error('Admin login error:', error);
-      return { success: false, error: error.message };
-    }
-  },
-
-  async validateSession(sessionToken: string): Promise<boolean> {
-    const storedToken = localStorage.getItem('admin_session_token');
-    return storedToken === sessionToken;
-  },
-
-  async getAdminRole(): Promise<string | null> {
-    return localStorage.getItem('admin_user_role');
-  },
-
-  async clearAllAuthState(): Promise<void> {
-    clearAllAuthState();
-  },
-
-  async checkAdminAccess(): Promise<{ hasAccess: boolean; role?: string; detail?: any[] }> {
-    const token = localStorage.getItem('admin_session_token');
-    const role = localStorage.getItem('admin_user_role') || localStorage.getItem('admin_role');
-    
-    if (!token || !role) {
-      return { hasAccess: false, detail: ['No token or role found in localStorage'] };
-    }
-
-    const isValid = await this.validateSession(token);
-    return { 
-      hasAccess: isValid, 
-      role: isValid ? role : undefined,
-      detail: isValid ? ['Valid session found'] : ['Invalid session']
-    };
-  },
-
-  async submitOnboardingApplication(data: { discord: string; secretKey: string; requestedRole: string }): Promise<{ success: boolean; error?: string }> {
-    try {
-      const ipAddress = 'unknown'; // Since we can't get real IP in browser
-      
-      const { error } = await supabase
-        .from('admin_applications')
-        .insert({
-          discord: data.discord,
-          ip_address: ipAddress,
-          secret_key: data.secretKey,
-          requested_role: data.requestedRole as 'admin' | 'moderator' | 'tester',
-          status: 'pending'
-        });
+      const { data, error } = await supabase.from("auth_config").select("config_key, config_value")
 
       if (error) {
-        console.error('Submit application error:', error);
-        return { success: false, error: error.message };
+        console.error("Error fetching auth config:", error)
+        return {}
       }
 
-      return { success: true };
-    } catch (error: any) {
-      console.error('Submit application error:', error);
-      return { success: false, error: error.message };
+      const config: { [key: string]: string } = {}
+      data?.forEach((item) => {
+        config[item.config_key] = item.config_value
+      })
+
+      return config
+    } catch (error) {
+      console.error("Error in getAuthConfig:", error)
+      return {}
     }
   },
 
   async authenticateAdmin(secretKey: string, debug?: boolean): Promise<LoginResult> {
     try {
-      // Check if it's the owner password
-      if (secretKey === "$$nullnox911$$") {
-        localStorage.setItem('admin_role', 'owner');
-        localStorage.setItem('admin_session_token', this.generateSessionToken());
-        return { 
-          success: true, 
-          role: 'owner',
-          debug: debug ? ['Owner password matched'] : undefined
-        };
+      const debugInfo: any[] = []
+
+      // Get auth configuration from database
+      const authConfig = await this.getAuthConfig()
+      debugInfo.push(`Loaded ${Object.keys(authConfig).length} auth config entries`)
+
+      let role: string | null = null
+
+      // Check against database stored passwords
+      if (secretKey === authConfig.owner_password) {
+        role = "owner"
+        debugInfo.push("Owner password matched from database")
+      } else if (secretKey === authConfig.admin_password) {
+        role = "admin"
+        debugInfo.push("Admin password matched from database")
+      } else if (secretKey === authConfig.tester_password) {
+        role = "tester"
+        debugInfo.push("Tester password matched from database")
+      } else if (secretKey === authConfig.moderator_password) {
+        role = "moderator"
+        debugInfo.push("Moderator password matched from database")
+      } else {
+        debugInfo.push("No password match found in database config")
+        debugInfo.push(`Available config keys: ${Object.keys(authConfig).join(", ")}`)
+        return {
+          success: false,
+          error: "Invalid password",
+          debug: debug ? debugInfo : undefined,
+        }
       }
 
-      // Check for general password that needs onboarding
-      if (secretKey === "admin123") {
-        return { 
-          success: true, 
-          needsOnboarding: true,
-          debug: debug ? ['General password matched - needs onboarding'] : undefined
-        };
-      }
+      // Set authentication state
+      const sessionToken = this.generateSessionToken()
+      localStorage.setItem("admin_session_token", sessionToken)
+      localStorage.setItem("admin_role", role)
+      localStorage.setItem("admin_session_active", "true")
 
-      const ipAddress = 'unknown';
-      return this.adminLogin(secretKey, ipAddress);
+      debugInfo.push(`Authentication successful for role: ${role}`)
+
+      return {
+        success: true,
+        role: role,
+        sessionToken: sessionToken,
+        debug: debug ? debugInfo : undefined,
+      }
     } catch (error: any) {
-      return { 
-        success: false, 
+      return {
+        success: false,
         error: error.message,
-        debug: debug ? ['Authentication error: ' + error.message] : undefined
-      };
+        debug: debug ? ["Authentication error: " + error.message] : undefined,
+      }
+    }
+  },
+
+  async validateSession(sessionToken: string): Promise<boolean> {
+    const storedToken = localStorage.getItem("admin_session_token")
+    return storedToken === sessionToken
+  },
+
+  async getAdminRole(): Promise<string | null> {
+    return localStorage.getItem("admin_role")
+  },
+
+  async clearAllAuthState(): Promise<void> {
+    clearAllAuthState()
+  },
+
+  async checkAdminAccess(): Promise<{ hasAccess: boolean; role?: string; detail?: any[] }> {
+    const token = localStorage.getItem("admin_session_token")
+    const role = localStorage.getItem("admin_role")
+    const sessionActive = localStorage.getItem("admin_session_active")
+
+    const detail: any[] = []
+
+    if (!token) {
+      detail.push("No session token found")
+      return { hasAccess: false, detail }
+    }
+
+    if (!role) {
+      detail.push("No role found")
+      return { hasAccess: false, detail }
+    }
+
+    if (sessionActive !== "true") {
+      detail.push("Session not active")
+      return { hasAccess: false, detail }
+    }
+
+    // Validate session token format (basic check)
+    if (token.length < 32) {
+      detail.push("Invalid session token format")
+      return { hasAccess: false, detail }
+    }
+
+    detail.push(`Valid session found for role: ${role}`)
+    return {
+      hasAccess: true,
+      role: role,
+      detail,
     }
   },
 
   async aggressiveManualRecheck(): Promise<{ hasAccess: boolean; role?: string; detail?: any[] }> {
-    return this.checkAdminAccess();
+    return this.checkAdminAccess()
   },
 
   generateSessionToken(): string {
-    const randomBytes = new Uint8Array(32);
-    window.crypto.getRandomValues(randomBytes);
-    return Array.from(randomBytes).map(byte => byte.toString(16).padStart(2, '0')).join('');
+    const randomBytes = new Uint8Array(32)
+    window.crypto.getRandomValues(randomBytes)
+    return Array.from(randomBytes)
+      .map((byte) => byte.toString(16).padStart(2, "0"))
+      .join("")
+  },
+
+  async updateAuthConfig(configKey: string, configValue: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      const { error } = await supabase.from("auth_config").upsert({
+        config_key: configKey,
+        config_value: configValue,
+        updated_at: new Date().toISOString(),
+      })
+
+      if (error) {
+        console.error("Error updating auth config:", error)
+        return { success: false, error: error.message }
+      }
+
+      return { success: true }
+    } catch (error: any) {
+      console.error("Error in updateAuthConfig:", error)
+      return { success: false, error: error.message }
+    }
+  },
+
+  async initializeDefaultPasswords(): Promise<{ success: boolean; error?: string }> {
+    try {
+      const defaultPasswords = [
+        { config_key: "owner_password", config_value: "$$nullnox911$$" },
+        { config_key: "admin_password", config_value: "admin2024secure" },
+        { config_key: "tester_password", config_value: "tester2024access" },
+        { config_key: "moderator_password", config_value: "mod2024control" },
+      ]
+
+      for (const password of defaultPasswords) {
+        const { error } = await supabase.from("auth_config").upsert(password)
+
+        if (error) {
+          console.error(`Error setting ${password.config_key}:`, error)
+          return { success: false, error: error.message }
+        }
+      }
+
+      return { success: true }
+    } catch (error: any) {
+      console.error("Error initializing default passwords:", error)
+      return { success: false, error: error.message }
+    }
   },
 
   async getPendingApplications(): Promise<AdminApplication[]> {
     try {
-      const { data, error } = await supabase
-        .from('admin_applications')
-        .select('*')
-        .eq('status', 'pending');
+      const { data, error } = await supabase.from("admin_applications").select("*").eq("status", "pending")
 
       if (error) {
-        console.error('Fetch applications error:', error);
-        return [];
+        console.error("Fetch applications error:", error)
+        return []
       }
 
-      return data || [];
+      return data || []
     } catch (error) {
-      console.error('Get pending applications error:', error);
-      return [];
+      console.error("Get pending applications error:", error)
+      return []
     }
   },
 
   async clearAllAdminSessions(): Promise<{ success: boolean; error?: string }> {
     try {
-      localStorage.removeItem('admin_session_token');
-      localStorage.removeItem('admin_user_role');
-      return { success: true };
+      localStorage.removeItem("admin_session_token")
+      localStorage.removeItem("admin_user_role")
+      return { success: true }
     } catch (error: any) {
-      console.error('Clear sessions error:', error);
-      return { success: false, error: error.message };
+      console.error("Clear sessions error:", error)
+      return { success: false, error: error.message }
     }
   },
 
   async reviewApplicationWithRole(
-    applicationId: string, 
-    action: 'approve' | 'deny', 
+    applicationId: string,
+    action: "approve" | "deny",
     reviewerRole: string,
-    assignedRole?: string
+    assignedRole?: string,
   ) {
     try {
-      console.log(`Reviewing application ${applicationId} with action: ${action}, role: ${assignedRole}`);
-      
-      if (action === 'approve' && assignedRole) {
+      console.log(`Reviewing application ${applicationId} with action: ${action}, role: ${assignedRole}`)
+
+      if (action === "approve" && assignedRole) {
         // Get application data first
         const { data: application, error: appError } = await supabase
-          .from('admin_applications')
-          .select('*')
-          .eq('id', applicationId)
-          .single();
+          .from("admin_applications")
+          .select("*")
+          .eq("id", applicationId)
+          .single()
 
         if (appError || !application) {
-          console.error('Application fetch error:', appError);
-          return { success: false, error: 'Application not found' };
+          console.error("Application fetch error:", appError)
+          return { success: false, error: "Application not found" }
         }
 
         // Insert into admin_users table
-        const { error: insertError } = await supabase
-          .from('admin_users')
-          .insert({
-            approved_by: reviewerRole,
-            role: assignedRole as 'admin' | 'moderator' | 'tester',
-            approved_at: new Date().toISOString(),
-            ip_address: application.ip_address
-          });
+        const { error: insertError } = await supabase.from("admin_users").insert({
+          approved_by: reviewerRole,
+          role: assignedRole as "admin" | "moderator" | "tester",
+          approved_at: new Date().toISOString(),
+          ip_address: application.ip_address,
+        })
 
         if (insertError) {
-          console.error('Insert error:', insertError);
-          return { success: false, error: insertError.message };
+          console.error("Insert error:", insertError)
+          return { success: false, error: insertError.message }
         }
       }
 
       // Update application status
       const { error: updateError } = await supabase
-        .from('admin_applications')
-        .update({ 
-          status: action === 'approve' ? 'approved' : 'denied',
+        .from("admin_applications")
+        .update({
+          status: action === "approve" ? "approved" : "denied",
           reviewed_at: new Date().toISOString(),
-          reviewed_by: reviewerRole
+          reviewed_by: reviewerRole,
         })
-        .eq('id', applicationId);
+        .eq("id", applicationId)
 
       if (updateError) {
-        console.error('Update error:', updateError);
-        return { success: false, error: updateError.message };
+        console.error("Update error:", updateError)
+        return { success: false, error: updateError.message }
       }
 
-      return { success: true };
+      return { success: true }
     } catch (error: any) {
-      console.error('Review application error:', error);
-      return { success: false, error: error.message };
+      console.error("Review application error:", error)
+      return { success: false, error: error.message }
     }
   },
-};
+}
