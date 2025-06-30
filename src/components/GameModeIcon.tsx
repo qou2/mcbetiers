@@ -9,8 +9,8 @@ interface GameModeIconProps {
 export function GameModeIcon({ mode, className = "h-4 w-4" }: GameModeIconProps) {
   const getIconPath = () => {
     switch (mode.toLowerCase()) {
-      case 'mace':
-        return '/lovable-uploads/5dde26cb-4eb5-4976-9ab5-92d461ff397d.png';
+      case 'skywars':
+        return '/lovable-uploads/pngegg.png';
       case 'crystal':
         return '/lovable-uploads/80633d42-7f02-40c2-899e-9b4f53453c4e.png';
       case 'midfight':
