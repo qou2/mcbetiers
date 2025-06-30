@@ -33,9 +33,7 @@ export function toDatabaseGameMode(gamemode: string): string {
   return gamemode.toLowerCase()
 }
 
-/**
- * Convert gamemode to proper GameMode type
- */
+
 export function toGameMode(gamemode: string): GameMode {
   const gameModeMap: Record<string, GameMode> = {
     skywars: "Skywars",
