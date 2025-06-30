@@ -9,6 +9,7 @@ import { usePopup } from "@/contexts/PopupContext"
 import type { GameMode } from "@/services/playerService"
 import { getAvatarUrl, handleAvatarError } from "@/utils/avatarUtils"
 import { useIsMobile } from "@/hooks/use-mobile"
+import { mapGameModeToDatabase } from "@/services/playerService"
 
 // Helper to get device icon
 const getDeviceIcon = (device = "PC", isMobile = false) => {
@@ -107,10 +108,21 @@ export function ModernResultPopup() {
   }
 
   const getTierData = (mode: GameMode) => {
-    // Find the actual tier for this gamemode from player data
-    const playerTier = popupData.tierAssignments.find((assignment) => assignment.gamemode === mode)
+    // Map the frontend display mode to the database mode
+    const dbMode = mapGameModeToDatabase(mode)
 
-    console.log(`Getting tier data for ${mode}:`, playerTier)
+    // Find the actual tier for this gamemode from player data
+    const playerTier = popupData.tierAssignments.find((assignment) => {
+      // Try exact match first, then case-insensitive match
+      return (
+        assignment.gamemode === dbMode ||
+        assignment.gamemode.toLowerCase() === dbMode.toLowerCase() ||
+        assignment.gamemode === mode ||
+        assignment.gamemode.toLowerCase() === mode.toLowerCase()
+      )
+    })
+
+    console.log(`Getting tier data for ${mode} (mapped to ${dbMode}):`, playerTier)
 
     if (playerTier && playerTier.tier && playerTier.tier !== "Not Ranked") {
       const tierMap: Record<string, { code: string; color: string; gradient: string }> = {
@@ -197,7 +209,9 @@ export function ModernResultPopup() {
                     <AvatarImage
                       src={
                         popupData.player.avatar_url ||
-                        getAvatarUrl(popupData.player.ign, popupData.player.java_username)
+                        getAvatarUrl(popupData.player.ign, popupData.player.java_username) ||
+                        "/placeholder.svg" ||
+                        "/placeholder.svg"
                       }
                       alt={popupData.player.ign}
                       className="object-cover object-center scale-110"
