@@ -1,13 +1,14 @@
+"use client"
 
-import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { X, Sparkles, Users } from 'lucide-react';
+import type React from "react"
+import { Dialog, DialogContent } from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+import { X, Sparkles, Users } from "lucide-react"
 
 interface WelcomePopupProps {
-  isOpen: boolean;
-  onClose: () => void;
-  visitorNumber: number;
+  isOpen: boolean
+  onClose: () => void
+  visitorNumber: number
 }
 
 const WelcomePopup: React.FC<WelcomePopupProps> = ({ isOpen, onClose, visitorNumber }) => {
@@ -36,12 +37,15 @@ const WelcomePopup: React.FC<WelcomePopupProps> = ({ isOpen, onClose, visitorNum
           {/* Welcome message */}
           <div className="space-y-4">
             <h2 className="text-2xl font-bold text-white mb-2">
-              👋 Welcome to <span className="bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">MCBE Tiers</span>.
+              👋 Welcome to{" "}
+              <span className="bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
+                MCBE Tiers
+              </span>
+              .
             </h2>
-            
+
             <p className="text-gray-300 text-sm leading-relaxed">
-              This tier list was created by{' '}
-              <span className="text-purple-400 font-semibold">qou2</span> and{' '}
+              This tier list was created by <span className="text-purple-400 font-semibold">qou2</span> and{" "}
               <span className="text-blue-400 font-semibold">Swaify</span>.
             </p>
 
@@ -49,7 +53,8 @@ const WelcomePopup: React.FC<WelcomePopupProps> = ({ isOpen, onClose, visitorNum
             <div className="flex items-center justify-center space-x-2 bg-white/5 rounded-lg p-3 border border-white/10">
               <Users className="h-5 w-5 text-green-400" />
               <span className="text-white font-medium">
-                🎉 You are visitor <span className="text-green-400 font-bold">#{visitorNumber.toLocaleString()}</span> to our site.
+                🎉 You are visitor <span className="text-green-400 font-bold">#{visitorNumber.toLocaleString()}</span>{" "}
+                to our site.
               </span>
             </div>
           </div>
@@ -70,7 +75,7 @@ const WelcomePopup: React.FC<WelcomePopupProps> = ({ isOpen, onClose, visitorNum
         </div>
       </DialogContent>
     </Dialog>
-  );
-};
+  )
+}
 
-export default WelcomePopup;
+export default WelcomePopup
