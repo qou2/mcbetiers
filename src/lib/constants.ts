@@ -1,11 +1,11 @@
 
 import { GameMode, TierLevel } from '@/services/playerService';
-import { Gem, Sword, Server, Heart, Axe, FlaskConical, BedDouble, BowArrow } from 'lucide-react';
+import { Gem, Sword, Server, Heart, Axe, FlaskConical, BedDouble} from 'lucide-react';
 
 export const GAMEMODES: { name: GameMode; icon: React.ElementType }[] = [
   { name: 'Crystal', icon: Gem },
   { name: 'Mifight', icon: Sword },
-  { name: 'Skywars', icon: BowArrow },
+  { name: 'Skywars', icon: Gem },
   { name: 'UHC', icon: Heart },
   { name: 'Bridge', icon: Axe },
   { name: 'Nodebuff', icon: FlaskConical },
