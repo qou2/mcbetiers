@@ -2,236 +2,396 @@
 
 import { useState, useEffect } from "react"
 import { supabase } from "@/integrations/supabase/client"
+import type { Player, GameMode, TierLevel } from "@/services/playerService"
 import { useToast } from "@/hooks/use-toast"
 
-export interface Player {
-  id: string
-  username: string
-  uuid: string
-  created_at: string
-  gamemode_scores?: GamemodeScore[]
+export interface PlayerResult {
+  gamemode: GameMode
+  tier: TierLevel
+  points: number
 }
 
-export interface GamemodeScore {
-  id: string
-  player_id: string
-  gamemode: string
-  display_tier: string
-  internal_tier: string
-  score?: number
-  created_at: string
-  updated_at: string
+export interface AdminPanelState {
+  players: Player[]
+  loading: boolean
+  error: string | null
 }
 
-export interface TierData {
-  [gamemode: string]: {
-    [tier: string]: Player[]
-  }
-}
-
-const GAMEMODES = ["skywars", "midfight", "bridge", "crystal", "sumo", "nodebuff", "bedfight"]
-
-const TIERS = ["Not Ranked", "HT1", "LT1", "HT2", "LT2", "HT3", "LT3", "HT4", "LT4", "HT5", "LT5", "Retired"]
-
-export const useAdminPanel = () => {
+export function useAdminPanel() {
   const [players, setPlayers] = useState<Player[]>([])
-  const [tierData, setTierData] = useState<TierData>({})
   const [loading, setLoading] = useState(false)
-  const [searchTerm, setSearchTerm] = useState("")
+  const [error, setError] = useState<string | null>(null)
   const { toast } = useToast()
 
-  // Initialize tier data structure
-  useEffect(() => {
-    const initialTierData: TierData = {}
-    GAMEMODES.forEach((gamemode) => {
-      initialTierData[gamemode] = {}
-      TIERS.forEach((tier) => {
-        initialTierData[gamemode][tier] = []
-      })
-    })
-    setTierData(initialTierData)
-  }, [])
-
-  const fetchPlayers = async () => {
+  const refreshPlayers = async () => {
     setLoading(true)
+    setError(null)
+
     try {
-      const { data, error } = await supabase
+      console.log("Fetching all players for admin panel...")
+
+      const { data: playersData, error: playersError } = await supabase
         .from("players")
-        .select(`
-          *,
-          gamemode_scores (*)
-        `)
-        .order("username")
+        .select("*")
+        .order("global_points", { ascending: false })
 
-      if (error) throw error
+      if (playersError) {
+        console.error("Error fetching players:", playersError)
+        setError(playersError.message)
+        return
+      }
 
-      setPlayers(data || [])
-      organizeTierData(data || [])
-    } catch (error) {
-      console.error("Error fetching players:", error)
-      toast({
-        title: "Error",
-        description: "Failed to fetch players",
-        variant: "destructive",
-      })
+      if (!playersData) {
+        setPlayers([])
+        return
+      }
+
+      // Get tier assignments for all players
+      const playerIds = playersData.map((p) => p.id)
+      const { data: tierData, error: tierError } = await supabase
+        .from("gamemode_scores")
+        .select("player_id, gamemode, internal_tier, score")
+        .in("player_id", playerIds)
+
+      if (tierError) {
+        console.error("Error fetching tier data:", tierError)
+      }
+
+      // Group tier assignments by player
+      const tiersByPlayer = new Map<string, { gamemode: GameMode; tier: TierLevel; score: number }[]>()
+
+      if (tierData) {
+        tierData.forEach((tier) => {
+          if (!tiersByPlayer.has(tier.player_id)) {
+            tiersByPlayer.set(tier.player_id, [])
+          }
+          tiersByPlayer.get(tier.player_id)!.push({
+            gamemode: tier.gamemode as GameMode,
+            tier: tier.internal_tier as TierLevel,
+            score: tier.score || 0,
+          })
+        })
+      }
+
+      const processedPlayers: Player[] = playersData.map((player, index) => ({
+        id: player.id,
+        ign: player.ign,
+        region: player.region || "NA",
+        device: player.device || "PC",
+        global_points: player.global_points || 0,
+        overall_rank: index + 1,
+        java_username: player.java_username,
+        avatar_url: player.avatar_url,
+        tierAssignments: tiersByPlayer.get(player.id) || [],
+      }))
+
+      setPlayers(processedPlayers)
+      console.log(`Loaded ${processedPlayers.length} players for admin panel`)
+    } catch (error: any) {
+      console.error("Exception in refreshPlayers:", error)
+      setError(error.message)
     } finally {
       setLoading(false)
     }
   }
 
-  const organizeTierData = (playersData: Player[]) => {
-    const newTierData: TierData = {}
+  const submitPlayerResults = async (
+    ign: string,
+    region: string,
+    device: string,
+    javaUsername?: string,
+    results: PlayerResult[] = [],
+  ) => {
+    setLoading(true)
 
-    // Initialize structure
-    GAMEMODES.forEach((gamemode) => {
-      newTierData[gamemode] = {}
-      TIERS.forEach((tier) => {
-        newTierData[gamemode][tier] = []
-      })
-    })
-
-    // Organize players by gamemode and tier
-    playersData.forEach((player) => {
-      if (player.gamemode_scores) {
-        player.gamemode_scores.forEach((score) => {
-          const gamemode = score.gamemode
-          const tier = score.display_tier || "Not Ranked"
-
-          if (newTierData[gamemode] && newTierData[gamemode][tier]) {
-            newTierData[gamemode][tier].push(player)
-          }
-        })
-      }
-    })
-
-    setTierData(newTierData)
-  }
-
-  const addPlayer = async (username: string, uuid: string) => {
     try {
-      const { data, error } = await supabase.from("players").insert([{ username, uuid }]).select().single()
+      console.log("Submitting player results:", { ign, region, device, javaUsername, results })
 
-      if (error) throw error
+      // Check if player exists
+      const { data: existingPlayer, error: searchError } = await supabase
+        .from("players")
+        .select("id")
+        .eq("ign", ign)
+        .single()
+
+      let playerId: string
+
+      if (existingPlayer) {
+        playerId = existingPlayer.id
+        console.log("Player exists, updating:", playerId)
+
+        // Update existing player
+        const { error: updateError } = await supabase
+          .from("players")
+          .update({
+            region,
+            device,
+            java_username: javaUsername || ign,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", playerId)
+
+        if (updateError) {
+          console.error("Error updating player:", updateError)
+          throw updateError
+        }
+      } else {
+        console.log("Creating new player")
+
+        // Create new player
+        const { data: newPlayer, error: createError } = await supabase
+          .from("players")
+          .insert({
+            ign,
+            region,
+            device,
+            java_username: javaUsername || ign,
+            global_points: 0,
+            banned: false,
+          })
+          .select("id")
+          .single()
+
+        if (createError) {
+          console.error("Error creating player:", createError)
+          throw createError
+        }
+
+        playerId = newPlayer.id
+      }
+
+      // Update tier assignments
+      for (const result of results) {
+        console.log(`Processing tier assignment: ${result.gamemode} -> ${result.tier}`)
+
+        // Check if assignment exists
+        const { data: existingAssignment } = await supabase
+          .from("gamemode_scores")
+          .select("id")
+          .eq("player_id", playerId)
+          .eq("gamemode", result.gamemode.toLowerCase())
+          .single()
+
+        if (existingAssignment) {
+          // Update existing assignment
+          const { error: updateError } = await supabase
+            .from("gamemode_scores")
+            .update({
+              internal_tier: result.tier,
+              display_tier: result.tier,
+              score: result.points,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", existingAssignment.id)
+
+          if (updateError) {
+            console.error("Error updating tier assignment:", updateError)
+            throw updateError
+          }
+        } else {
+          // Create new assignment
+          const { error: createError } = await supabase.from("gamemode_scores").insert({
+            player_id: playerId,
+            gamemode: result.gamemode.toLowerCase(),
+            internal_tier: result.tier,
+            display_tier: result.tier,
+            score: result.points,
+          })
+
+          if (createError) {
+            console.error("Error creating tier assignment:", createError)
+            throw createError
+          }
+        }
+      }
+
+      // Recalculate global points
+      await updatePlayerGlobalPoints(playerId)
 
       toast({
         title: "Success",
-        description: `Player ${username} added successfully`,
+        description: `Player ${ign} has been successfully ${existingPlayer ? "updated" : "added"}.`,
       })
 
-      fetchPlayers()
-      return data
-    } catch (error) {
-      console.error("Error adding player:", error)
+      await refreshPlayers()
+
+      return { success: true }
+    } catch (error: any) {
+      console.error("Error submitting player results:", error)
       toast({
-        title: "Error",
-        description: "Failed to add player",
+        title: "Submission Failed",
+        description: error.message,
         variant: "destructive",
       })
-      throw error
+
+      return { success: false, error: error.message }
+    } finally {
+      setLoading(false)
     }
   }
 
-  const updatePlayerTier = async (playerId: string, gamemode: string, tier: string) => {
+  const updatePlayerTier = async (playerId: string, gamemode: GameMode, newTier: TierLevel) => {
     try {
-      // Check if player already has a score for this gamemode
-      const { data: existingScore } = await supabase
+      console.log(`Updating player ${playerId} tier for ${gamemode} to ${newTier}`)
+
+      // Check if assignment exists
+      const { data: existingAssignment } = await supabase
         .from("gamemode_scores")
         .select("id")
         .eq("player_id", playerId)
         .eq("gamemode", gamemode.toLowerCase())
         .single()
 
-      if (existingScore) {
-        // Update existing score
+      if (existingAssignment) {
+        // Update existing assignment
         const { error } = await supabase
           .from("gamemode_scores")
           .update({
-            display_tier: tier,
-            internal_tier: tier,
+            internal_tier: newTier,
+            display_tier: newTier,
             updated_at: new Date().toISOString(),
           })
-          .eq("id", existingScore.id)
+          .eq("id", existingAssignment.id)
 
         if (error) throw error
       } else {
-        // Create new score
-        const { error } = await supabase.from("gamemode_scores").insert([
-          {
-            player_id: playerId,
-            gamemode: gamemode.toLowerCase(),
-            display_tier: tier,
-            internal_tier: tier,
-          },
-        ])
+        // Create new assignment
+        const { error } = await supabase.from("gamemode_scores").insert({
+          player_id: playerId,
+          gamemode: gamemode.toLowerCase(),
+          internal_tier: newTier,
+          display_tier: newTier,
+          score: 0,
+        })
 
         if (error) throw error
       }
 
+      // Recalculate global points
+      await updatePlayerGlobalPoints(playerId)
+
       toast({
-        title: "Success",
-        description: `Player tier updated to ${tier} for ${gamemode}`,
+        title: "Tier Updated",
+        description: `Player tier for ${gamemode} updated to ${newTier}`,
       })
 
-      fetchPlayers()
-    } catch (error) {
+      return { success: true }
+    } catch (error: any) {
       console.error("Error updating player tier:", error)
       toast({
-        title: "Error",
-        description: "Failed to update player tier",
+        title: "Update Failed",
+        description: error.message,
         variant: "destructive",
       })
+
+      return { success: false, error: error.message }
     }
   }
 
   const deletePlayer = async (playerId: string) => {
     try {
-      // First delete all gamemode scores for this player
-      const { error: scoresError } = await supabase.from("gamemode_scores").delete().eq("player_id", playerId)
+      console.log(`Deleting player: ${playerId}`)
 
-      if (scoresError) throw scoresError
+      // Delete tier assignments first
+      const { error: tierError } = await supabase.from("gamemode_scores").delete().eq("player_id", playerId)
 
-      // Then delete the player
+      if (tierError) {
+        console.error("Error deleting tier assignments:", tierError)
+        throw tierError
+      }
+
+      // Delete player
       const { error: playerError } = await supabase.from("players").delete().eq("id", playerId)
 
-      if (playerError) throw playerError
+      if (playerError) {
+        console.error("Error deleting player:", playerError)
+        throw playerError
+      }
 
       toast({
-        title: "Success",
-        description: "Player deleted successfully",
+        title: "Player Deleted",
+        description: "Player and all associated data have been deleted.",
       })
 
-      fetchPlayers()
-    } catch (error) {
+      return { success: true }
+    } catch (error: any) {
       console.error("Error deleting player:", error)
       toast({
-        title: "Error",
-        description: "Failed to delete player",
+        title: "Delete Failed",
+        description: error.message,
         variant: "destructive",
       })
+
+      return { success: false, error: error.message }
     }
   }
 
-  const filteredPlayers = players.filter(
-    (player) =>
-      player.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      player.uuid.toLowerCase().includes(searchTerm.toLowerCase()),
-  )
+  const updatePlayerGlobalPoints = async (playerId: string) => {
+    try {
+      // Get all tier assignments for the player
+      const { data: tierAssignments, error } = await supabase
+        .from("gamemode_scores")
+        .select("internal_tier, score")
+        .eq("player_id", playerId)
+        .not("internal_tier", "is", null)
+
+      if (error) {
+        console.error("Error fetching tier assignments:", error)
+        return
+      }
+
+      // Calculate total points
+      const tierPoints: Record<TierLevel, number> = {
+        HT1: 50,
+        LT1: 45,
+        HT2: 40,
+        LT2: 35,
+        HT3: 30,
+        LT3: 25,
+        HT4: 20,
+        LT4: 15,
+        HT5: 10,
+        LT5: 5,
+        Retired: 0,
+        "Not Ranked": 0,
+      }
+
+      let totalPoints = 0
+      if (tierAssignments) {
+        tierAssignments.forEach((assignment) => {
+          const points = tierPoints[assignment.internal_tier as TierLevel] || 0
+          totalPoints += points
+        })
+      }
+
+      // Update player's global points
+      const { error: updateError } = await supabase
+        .from("players")
+        .update({
+          global_points: totalPoints,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", playerId)
+
+      if (updateError) {
+        console.error("Error updating global points:", updateError)
+      }
+    } catch (error) {
+      console.error("Error in updatePlayerGlobalPoints:", error)
+    }
+  }
 
   useEffect(() => {
-    fetchPlayers()
+    refreshPlayers()
   }, [])
 
   return {
-    players: filteredPlayers,
-    tierData,
+    players,
     loading,
-    searchTerm,
-    setSearchTerm,
-    addPlayer,
+    error,
+    refreshPlayers,
+    submitPlayerResults,
     updatePlayerTier,
     deletePlayer,
-    fetchPlayers,
-    gamemodes: GAMEMODES,
-    tiers: TIERS,
   }
 }
