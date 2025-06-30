@@ -4,7 +4,7 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { GameModeSelector } from "./GameModeSelector"
 import { MobileNavMenu } from "./MobileNavMenu"
-import { Home, Youtube, MessageCircle, Search, Menu, X } from 'lucide-react'
+import { Home, Youtube, MessageCircle, Search, Menu, X } from "lucide-react"
 import { Link } from "react-router-dom"
 import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
@@ -142,7 +142,7 @@ export function Navbar({ selectedMode, onSelectMode, navigate }: NavbarProps) {
   const containerPadding = isMobile ? "px-3" : isTablet ? "px-6" : "px-4 lg:px-8"
   const navHeight = isMobile ? "h-14" : isTablet ? "h-18" : "h-16"
   const logoHeight = isMobile ? "h-8" : isTablet ? "h-12" : "h-10"
-  const titleSize = isMobile ? "text-lg" : isTablet ? "text-2xl" : "text-xl md:text-2xl"
+  const titleHeight = isMobile ? "h-10" : isTablet ? "h-16" : "h-14"
 
   return (
     <div className={`pt-4 pb-2 ${isMobile ? "px-2" : isTablet ? "px-3" : "pt-8"}`}>
@@ -156,19 +156,16 @@ export function Navbar({ selectedMode, onSelectMode, navigate }: NavbarProps) {
           <div className={`flex items-center justify-between ${navHeight}`}>
             {/* Logo */}
             <div className="flex-shrink-0 flex items-center">
-              <button
-                onClick={() => navigate("/")}
-                className="flex items-center"
-              >
+              <button onClick={() => navigate("/")} className="flex items-center">
                 <img
                   src="/lovable-uploads/3bad17d6-7347-46e0-8f33-35534094962f.png"
                   alt="Trophy"
-                  className={`w-auto mr-2 ${logoHeight}`}
+                  className={`w-auto mr-3 ${logoHeight}`}
                 />
                 <img
                   src="/lovable-uploads/icon.png"
                   alt="MCBE TIERS"
-                  className={`w-auto ${logoHeight}`}
+                  className={`w-auto ${titleHeight} object-contain`}
                 />
               </button>
             </div>
