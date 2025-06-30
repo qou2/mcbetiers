@@ -1,19 +1,19 @@
 
 import { GameMode, TierLevel } from '@/services/playerService';
-import { Gem, Sword, Server, Heart, Axe, FlaskConical, BedDouble } from 'lucide-react';
+import { Gem, Sword, Server, Heart, Axe, FlaskConical, BedDouble, BowArrow } from 'lucide-react';
 
 export const GAMEMODES: { name: GameMode; icon: React.ElementType }[] = [
   { name: 'Crystal', icon: Gem },
-  { name: 'Sword', icon: Sword },
-  { name: 'SMP', icon: Server },
+  { name: 'Mifight', icon: Sword },
+  { name: 'Skywars', icon: BowArrow },
   { name: 'UHC', icon: Heart },
-  { name: 'Axe', icon: Axe },
-  { name: 'NethPot', icon: FlaskConical },
-  { name: 'Bedwars', icon: BedDouble },
-  { name: 'Mace', icon: Axe },
+  { name: 'Bridge', icon: Axe },
+  { name: 'Nodebuff', icon: FlaskConical },
+  { name: 'Bedfight', icon: BedDouble },
+  { name: 'Sumo', icon: Axe },
 ];
 
-export const GAME_MODES: GameMode[] = ['Crystal', 'Sword', 'SMP', 'UHC', 'Axe', 'NethPot', 'Bedwars', 'Mace'];
+export const GAME_MODES: GameMode[] = ['Crystal', 'Mifight', 'Skywars', 'UHC', 'Bridge', 'Nodebuff', 'Bedfight', 'Sumo'];
 
 export const TIER_LEVELS: TierLevel[] = ['HT1', 'LT1', 'HT2', 'LT2', 'HT3', 'LT3', 'HT4', 'LT4', 'HT5', 'LT5', 'Retired', 'Not Ranked'];
 
