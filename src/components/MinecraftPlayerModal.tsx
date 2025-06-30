@@ -1,70 +1,92 @@
+"use client"
 
-import React, { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { X, MapPin, Star, Crown } from 'lucide-react';
-import { Player, GameMode } from '@/services/playerService';
-import { GameModeIcon } from './GameModeIcon';
-import { getPlayerRank } from '@/utils/rankUtils';
-import { supabase } from '@/integrations/supabase/client';
+import type React from "react"
+import { useEffect, useState } from "react"
+import { motion, AnimatePresence } from "framer-motion"
+import { X, MapPin, Star, Crown } from "lucide-react"
+import type { Player, GameMode } from "@/services/playerService"
+import { GameModeIcon } from "./GameModeIcon"
+import { getPlayerRank } from "@/utils/rankUtils"
+import { supabase } from "@/integrations/supabase/client"
 
 interface MinecraftPlayerModalProps {
-  player: Player;
-  isOpen: boolean;
-  onClose: () => void;
+  player: Player
+  isOpen: boolean
+  onClose: () => void
 }
 
-export const MinecraftPlayerModal: React.FC<MinecraftPlayerModalProps> = ({
-  player,
-  isOpen,
-  onClose,
-}) => {
-  const [playerTiers, setPlayerTiers] = useState<Record<string, any>>({});
-  const [loading, setLoading] = useState(true);
+export const MinecraftPlayerModal: React.FC<MinecraftPlayerModalProps> = ({ player, isOpen, onClose }) => {
+  const [playerTiers, setPlayerTiers] = useState<Record<string, any>>({})
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     if (isOpen && player) {
-      loadPlayerTiers();
+      loadPlayerTiers()
     }
-  }, [isOpen, player]);
+  }, [isOpen, player])
 
   const loadPlayerTiers = async () => {
-    setLoading(true);
+    setLoading(true)
     try {
-      const { data, error } = await supabase
-        .from('gamemode_scores')
-        .select('*')
-        .eq('player_id', player.id);
+      const { data, error } = await supabase.from("gamemode_scores").select("*").eq("player_id", player.id)
 
       if (error) {
-        console.error('Error loading player tiers:', error);
-        return;
+        console.error("Error loading player tiers:", error)
+        return
       }
 
-      const tiers: Record<string, any> = {};
-      data?.forEach(tier => {
-        tiers[tier.gamemode] = tier.internal_tier;
-      });
+      const tiers: Record<string, any> = {}
+      data?.forEach((tier) => {
+        // Normalize gamemode names for matching
+        const normalizedGamemode = normalizeGamemode(tier.gamemode)
+        tiers[normalizedGamemode] = tier.internal_tier
+      })
 
-      setPlayerTiers(tiers);
+      console.log("Loaded player tiers:", tiers)
+      setPlayerTiers(tiers)
     } catch (error) {
-      console.error('Error loading player tiers:', error);
+      console.error("Error loading player tiers:", error)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
-  if (!isOpen || !player) return null;
+  // Function to normalize gamemode names for consistent matching
+  const normalizeGamemode = (gamemode: string): string => {
+    if (!gamemode) return ""
 
-  const gameModes: GameMode[] = ['Crystal', 'Sword', 'Mace', 'Axe', 'SMP', 'UHC', 'NethPot', 'Bedwars'];
-  const playerPoints = player.global_points || 0;
-  const playerRank = getPlayerRank(playerPoints);
-  const currentRank = player.overall_rank || 1;
+    const normalized = gamemode.toLowerCase().trim()
+
+    // Map variations to standard names
+    const gamemodeMap: Record<string, string> = {
+      skywars: "Skywars",
+      midfight: "Midfight",
+      bridge: "Bridge",
+      crystal: "Crystal",
+      crystalpvp: "Crystal",
+      sumo: "Sumo",
+      nodebuff: "Nodebuff",
+      nb: "Nodebuff",
+      bedfight: "Bedfight",
+      bed: "Bedfight",
+    }
+
+    return gamemodeMap[normalized] || gamemode
+  }
+
+  if (!isOpen || !player) return null
+
+  // Updated gamemodes array with the new 7 gamemodes
+  const gameModes: GameMode[] = ["Skywars", "Midfight", "Bridge", "Crystal", "Sumo", "Nodebuff", "Bedfight"]
+  const playerPoints = player.global_points || 0
+  const playerRank = getPlayerRank(playerPoints)
+  const currentRank = player.overall_rank || 1
 
   const getTierColor = (tier: string) => {
-    if (tier?.startsWith('HT')) return 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white';
-    if (tier?.startsWith('LT')) return 'bg-gradient-to-r from-gray-500 to-gray-600 text-white';
-    return 'bg-gray-600 text-gray-100';
-  };
+    if (tier?.startsWith("HT")) return "bg-gradient-to-r from-yellow-500 to-orange-500 text-white"
+    if (tier?.startsWith("LT")) return "bg-gradient-to-r from-gray-500 to-gray-600 text-white"
+    return "bg-gray-600 text-gray-100"
+  }
 
   return (
     <AnimatePresence>
@@ -82,11 +104,11 @@ export const MinecraftPlayerModal: React.FC<MinecraftPlayerModalProps> = ({
             initial={{ scale: 0.8, opacity: 0, y: 50 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.8, opacity: 0, y: 50 }}
-            transition={{ 
-              type: "spring", 
-              stiffness: 300, 
+            transition={{
+              type: "spring",
+              stiffness: 300,
               damping: 25,
-              duration: 0.4 
+              duration: 0.4,
             }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -107,7 +129,7 @@ export const MinecraftPlayerModal: React.FC<MinecraftPlayerModalProps> = ({
             {/* Content */}
             <div className="relative p-6 text-center">
               {/* Avatar with Enhanced Effects */}
-              <motion.div 
+              <motion.div
                 className="flex justify-center mb-4"
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
@@ -120,7 +142,7 @@ export const MinecraftPlayerModal: React.FC<MinecraftPlayerModalProps> = ({
                       alt={`${player.ign}'s skin`}
                       className="w-full h-full object-cover object-center"
                       onError={(e) => {
-                        e.currentTarget.src = `https://crafatar.com/avatars/${player.ign}?size=128&overlay=true`;
+                        e.currentTarget.src = `https://crafatar.com/avatars/${player.ign}?size=128&overlay=true`
                       }}
                     />
                   </div>
@@ -139,7 +161,7 @@ export const MinecraftPlayerModal: React.FC<MinecraftPlayerModalProps> = ({
               </motion.div>
 
               {/* Player Name with Animation */}
-              <motion.h3 
+              <motion.h3
                 className="text-xl font-bold text-white mb-3"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -149,7 +171,7 @@ export const MinecraftPlayerModal: React.FC<MinecraftPlayerModalProps> = ({
               </motion.h3>
 
               {/* Enhanced Rank Badge */}
-              <motion.div 
+              <motion.div
                 className={`inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r ${playerRank.gradient} mb-4 text-sm font-bold shadow-lg`}
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -161,27 +183,27 @@ export const MinecraftPlayerModal: React.FC<MinecraftPlayerModalProps> = ({
               </motion.div>
 
               {/* Region with Enhanced Styling */}
-              <motion.div 
+              <motion.div
                 className="flex items-center justify-center gap-2 text-slate-300 mb-4 text-sm"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.5 }}
               >
                 <MapPin className="w-4 h-4" />
-                <span>{player.region || 'North America'}</span>
+                <span>{player.region || "North America"}</span>
               </motion.div>
 
               {/* Enhanced Position Section */}
-              <motion.div 
+              <motion.div
                 className="mb-5"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.6 }}
               >
-                <h4 className="text-slate-400 text-xs uppercase tracking-wider mb-3 font-semibold">
-                  GLOBAL POSITION
-                </h4>
-                <div className={`bg-gradient-to-r ${playerRank.gradient} rounded-xl p-3 flex items-center justify-between shadow-lg`}>
+                <h4 className="text-slate-400 text-xs uppercase tracking-wider mb-3 font-semibold">GLOBAL POSITION</h4>
+                <div
+                  className={`bg-gradient-to-r ${playerRank.gradient} rounded-xl p-3 flex items-center justify-between shadow-lg`}
+                >
                   <div className="flex items-center gap-3">
                     <div className="bg-white/20 text-white rounded-lg px-2 py-1 font-bold text-sm backdrop-blur-sm">
                       #{currentRank}
@@ -191,28 +213,27 @@ export const MinecraftPlayerModal: React.FC<MinecraftPlayerModalProps> = ({
                       <span className="text-white font-bold text-sm">OVERALL</span>
                     </div>
                   </div>
-                  <span className="text-white/90 text-sm font-medium">
-                    {playerPoints} pts
-                  </span>
+                  <span className="text-white/90 text-sm font-medium">{playerPoints} pts</span>
                 </div>
               </motion.div>
 
               {/* Enhanced Tiers Section */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.7 }}
-              >
-                <h4 className="text-slate-400 text-xs uppercase tracking-wider mb-3 font-semibold">
-                  GAMEMODE TIERS
-                </h4>
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }}>
+                <h4 className="text-slate-400 text-xs uppercase tracking-wider mb-3 font-semibold">GAMEMODE TIERS</h4>
                 {loading ? (
                   <div className="text-slate-400 text-sm">Loading tiers...</div>
                 ) : (
                   <div className="grid grid-cols-4 gap-2">
                     {gameModes.map((mode, index) => {
-                      const tier = playerTiers[mode] || 'LT1';
-                      
+                      // Try multiple variations to find the tier
+                      const tier =
+                        playerTiers[mode] ||
+                        playerTiers[mode.toLowerCase()] ||
+                        playerTiers[normalizeGamemode(mode)] ||
+                        "LT1"
+
+                      console.log(`Mode: ${mode}, Found tier: ${tier}`)
+
                       return (
                         <motion.div
                           key={mode}
@@ -229,7 +250,7 @@ export const MinecraftPlayerModal: React.FC<MinecraftPlayerModalProps> = ({
                             {tier}
                           </div>
                         </motion.div>
-                      );
+                      )
                     })}
                   </div>
                 )}
@@ -239,5 +260,5 @@ export const MinecraftPlayerModal: React.FC<MinecraftPlayerModalProps> = ({
         </motion.div>
       )}
     </AnimatePresence>
-  );
-};
+  )
+}
