@@ -20,7 +20,7 @@ interface PlayerModalProps {
 export function PlayerModal({ isOpen, onClose, player }: PlayerModalProps) {
   const [playerTiers, setPlayerTiers] = useState<Record<GameMode, { tier: TierLevel; score: number }>>({} as any)
 
-  
+  // Calculate player rank based on points
   const playerPoints = Number(player?.global_points || player?.points || 0)
   const rankInfo = getPlayerRank(playerPoints)
 
@@ -41,13 +41,11 @@ export function PlayerModal({ isOpen, onClose, player }: PlayerModalProps) {
   // Fetch player's tiers across all gamemodes
   useEffect(() => {
     if (isOpen && player && player.id) {
-      // For now, we'll use mock data since getPlayerTiers doesn't exist
-      // This would need to be implemented based on your actual API
-      console.log("Would fetch player tiers for:", player.id)
+      console.log("Player tier assignments:", player.tierAssignments)
     }
   }, [isOpen, player])
 
-  // List all possible gamemodes with proper casing to match GameMode type
+  // NEW GAMEMODES - Updated to use the new 7 gamemodes
   const allGamemodes: GameMode[] = ["Skywars", "Midfight", "Bridge", "Crystal", "Sumo", "Nodebuff", "Bedfight"]
 
   const modalVariants = {
@@ -64,6 +62,21 @@ export function PlayerModal({ isOpen, onClose, player }: PlayerModalProps) {
     if (badge.includes("Master")) return "text-yellow-400"
     if (badge.includes("Ace")) return "text-orange-400"
     return "text-purple-400"
+  }
+
+  // Function to get tier color based on tier level
+  const getTierColor = (tier: TierLevel) => {
+    if (tier === "Not Ranked") return "text-gray-400"
+    if (tier === "Retired") return "text-gray-500"
+
+    // Extract tier number for coloring
+    if (tier.includes("1")) return "text-blue-400" // T1
+    if (tier.includes("2")) return "text-green-400" // T2
+    if (tier.includes("3")) return "text-yellow-400" // T3
+    if (tier.includes("4")) return "text-orange-400" // T4
+    if (tier.includes("5")) return "text-red-400" // T5
+
+    return "text-gray-400"
   }
 
   return (
@@ -128,7 +141,7 @@ export function PlayerModal({ isOpen, onClose, player }: PlayerModalProps) {
           <div className="grid grid-cols-2 gap-4 mt-6">
             <div className="bg-white/5 rounded-lg p-3 flex flex-col">
               <span className="text-xs text-white/40">Rank</span>
-              <span className="text-lg font-bold">#{player.position || "?"}</span>
+              <span className="text-lg font-bold">#{player.overall_rank || player.position || "?"}</span>
             </div>
 
             <div className="bg-white/5 rounded-lg p-3 flex flex-col">
@@ -141,54 +154,32 @@ export function PlayerModal({ isOpen, onClose, player }: PlayerModalProps) {
           </div>
 
           <div className="mt-5">
-            <h3 className="text-md font-medium mb-3">Gamemode Rankings</h3>
-            <div className="grid grid-cols-2 gap-3">
+            <h3 className="text-md font-medium mb-3">Gamemode Tiers</h3>
+            <div className="grid grid-cols-4 gap-2">
               {allGamemodes.map((mode, index) => {
                 // Find tier assignment for this gamemode from player data
+                // Check both capitalized and lowercase versions for compatibility
                 const tierAssignment = player.tierAssignments?.find(
-                  (assignment: any) => assignment.gamemode.toLowerCase() === mode.toLowerCase(),
+                  (assignment: any) =>
+                    assignment.gamemode.toLowerCase() === mode.toLowerCase() || assignment.gamemode === mode,
                 )
 
                 const tier = tierAssignment?.tier || "Not Ranked"
-
-                // Extract tier number and high/low status
-                let tierNumber = 0
-                let tierStatus = ""
-
-                if (tier !== "Not Ranked" && tier !== "Retired") {
-                  if (tier.startsWith("HT")) {
-                    tierStatus = "High"
-                    tierNumber = Number.parseInt(tier.substring(2))
-                  } else if (tier.startsWith("LT")) {
-                    tierStatus = "Low"
-                    tierNumber = Number.parseInt(tier.substring(2))
-                  }
-                }
+                const displayTier = tier === "Not Ranked" ? "NR" : tier
 
                 return (
                   <motion.div
                     key={mode}
-                    className="bg-white/5 p-3 rounded flex items-center justify-between"
+                    className="bg-white/5 p-2 rounded flex flex-col items-center text-center"
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.05 }}
                   >
-                    <span className="text-sm flex items-center">
+                    <div className="mb-1">
                       <GameModeIcon mode={mode.toLowerCase()} />
-                      {toDisplayGameMode(mode)}
-                    </span>
-                    <div className="flex flex-col items-end">
-                      {tier === "Not Ranked" ? (
-                        <span className="text-sm font-bold text-gray-400">Not Ranked</span>
-                      ) : tier === "Retired" ? (
-                        <span className="text-sm font-bold text-gray-400">Retired</span>
-                      ) : (
-                        <>
-                          <span className={cn("text-sm font-bold", `text-tier-${tierNumber}`)}>T{tierNumber}</span>
-                          <span className="text-xs text-white/50">{tierStatus}</span>
-                        </>
-                      )}
                     </div>
+                    <span className="text-xs text-white/60 mb-1">{toDisplayGameMode(mode)}</span>
+                    <span className={cn("text-xs font-bold", getTierColor(tier))}>{displayTier}</span>
                   </motion.div>
                 )
               })}
