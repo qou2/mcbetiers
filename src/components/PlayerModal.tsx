@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
-import { Trophy, Monitor, Smartphone, Gamepad, Award } from "lucide-react"
+import { Trophy, Monitor, Smartphone, Gamepad, Award } from 'lucide-react'
 import { cn } from "@/lib/utils"
 import { motion } from "framer-motion"
 import type { GameMode, TierLevel } from "@/services/playerService"
