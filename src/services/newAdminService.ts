@@ -55,7 +55,6 @@ export const newAdminService = {
       const { data, error } = await supabase.from("auth_config").select("config_key, config_value")
 
       if (error) {
-        console.error("Error fetching auth config:", error)
         return {}
       }
 
@@ -66,7 +65,6 @@ export const newAdminService = {
 
       return config
     } catch (error) {
-      console.error("Error in getAuthConfig:", error)
       return {}
     }
   },
@@ -77,26 +75,28 @@ export const newAdminService = {
 
       // Get auth configuration from database
       const authConfig = await this.getAuthConfig()
-      debugInfo.push(`Loaded ${Object.keys(authConfig).length} auth config entries`)
+      debugInfo.push("Authentication attempt processed")
 
       let role: string | null = null
 
       // Check against database stored passwords
       if (secretKey === authConfig.owner_password) {
         role = "owner"
-        debugInfo.push("Owner password matched from database")
+        debugInfo.push("Owner access granted")
       } else if (secretKey === authConfig.admin_password) {
         role = "admin"
-        debugInfo.push("Admin password matched from database")
+        debugInfo.push("Admin access granted")
       } else if (secretKey === authConfig.tester_password) {
         role = "tester"
-        debugInfo.push("Tester password matched from database")
+        debugInfo.push("Tester access granted")
       } else if (secretKey === authConfig.moderator_password) {
         role = "moderator"
-        debugInfo.push("Moderator password matched from database")
+        debugInfo.push("Moderator access granted")
+      } else if (secretKey === authConfig.general_password) {
+        role = "tester"
+        debugInfo.push("General access granted")
       } else {
-        debugInfo.push("No password match found in database config")
-        debugInfo.push(`Available config keys: ${Object.keys(authConfig).join(", ")}`)
+        debugInfo.push("Access denied")
         return {
           success: false,
           error: "Invalid password",
@@ -110,7 +110,7 @@ export const newAdminService = {
       localStorage.setItem("admin_role", role)
       localStorage.setItem("admin_session_active", "true")
 
-      debugInfo.push(`Authentication successful for role: ${role}`)
+      debugInfo.push(`Access granted for role: ${role}`)
 
       return {
         success: true,
@@ -121,8 +121,8 @@ export const newAdminService = {
     } catch (error: any) {
       return {
         success: false,
-        error: error.message,
-        debug: debug ? ["Authentication error: " + error.message] : undefined,
+        error: "Authentication failed",
+        debug: debug ? ["Authentication error occurred"] : undefined,
       }
     }
   },
@@ -162,7 +162,6 @@ export const newAdminService = {
       return { hasAccess: false, detail }
     }
 
-    // Validate session token format (basic check)
     if (token.length < 32) {
       detail.push("Invalid session token format")
       return { hasAccess: false, detail }
@@ -197,38 +196,11 @@ export const newAdminService = {
       })
 
       if (error) {
-        console.error("Error updating auth config:", error)
         return { success: false, error: error.message }
       }
 
       return { success: true }
     } catch (error: any) {
-      console.error("Error in updateAuthConfig:", error)
-      return { success: false, error: error.message }
-    }
-  },
-
-  async initializeDefaultPasswords(): Promise<{ success: boolean; error?: string }> {
-    try {
-      const defaultPasswords = [
-        { config_key: "owner_password", config_value: "$$nullnox911$$" },
-        { config_key: "admin_password", config_value: "admin2024secure" },
-        { config_key: "tester_password", config_value: "tester2024access" },
-        { config_key: "moderator_password", config_value: "mod2024control" },
-      ]
-
-      for (const password of defaultPasswords) {
-        const { error } = await supabase.from("auth_config").upsert(password)
-
-        if (error) {
-          console.error(`Error setting ${password.config_key}:`, error)
-          return { success: false, error: error.message }
-        }
-      }
-
-      return { success: true }
-    } catch (error: any) {
-      console.error("Error initializing default passwords:", error)
       return { success: false, error: error.message }
     }
   },
@@ -238,13 +210,11 @@ export const newAdminService = {
       const { data, error } = await supabase.from("admin_applications").select("*").eq("status", "pending")
 
       if (error) {
-        console.error("Fetch applications error:", error)
         return []
       }
 
       return data || []
     } catch (error) {
-      console.error("Get pending applications error:", error)
       return []
     }
   },
@@ -255,7 +225,6 @@ export const newAdminService = {
       localStorage.removeItem("admin_user_role")
       return { success: true }
     } catch (error: any) {
-      console.error("Clear sessions error:", error)
       return { success: false, error: error.message }
     }
   },
@@ -267,10 +236,7 @@ export const newAdminService = {
     assignedRole?: string,
   ) {
     try {
-      console.log(`Reviewing application ${applicationId} with action: ${action}, role: ${assignedRole}`)
-
       if (action === "approve" && assignedRole) {
-        // Get application data first
         const { data: application, error: appError } = await supabase
           .from("admin_applications")
           .select("*")
@@ -278,11 +244,9 @@ export const newAdminService = {
           .single()
 
         if (appError || !application) {
-          console.error("Application fetch error:", appError)
           return { success: false, error: "Application not found" }
         }
 
-        // Insert into admin_users table
         const { error: insertError } = await supabase.from("admin_users").insert({
           approved_by: reviewerRole,
           role: assignedRole as "admin" | "moderator" | "tester",
@@ -291,12 +255,10 @@ export const newAdminService = {
         })
 
         if (insertError) {
-          console.error("Insert error:", insertError)
           return { success: false, error: insertError.message }
         }
       }
 
-      // Update application status
       const { error: updateError } = await supabase
         .from("admin_applications")
         .update({
@@ -307,13 +269,11 @@ export const newAdminService = {
         .eq("id", applicationId)
 
       if (updateError) {
-        console.error("Update error:", updateError)
         return { success: false, error: updateError.message }
       }
 
       return { success: true }
     } catch (error: any) {
-      console.error("Review application error:", error)
       return { success: false, error: error.message }
     }
   },
