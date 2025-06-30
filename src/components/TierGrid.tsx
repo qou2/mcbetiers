@@ -174,7 +174,7 @@ export function TierGrid({ selectedMode, onPlayerClick }: TierGridProps) {
         </div>
       )}
 
-      {/* Retired Players Section */}
+      {/* Retired Section */}
       {showRetired && (
         <div className="mt-8 pt-6 border-t border-white/10">
           <h2 className="text-xl font-bold mb-4 text-gray-400">Retired Players</h2>
