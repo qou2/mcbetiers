@@ -6,10 +6,8 @@ import { X, Monitor, Smartphone, Gamepad } from "lucide-react"
 import { GameModeIcon } from "./GameModeIcon"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { usePopup } from "@/contexts/PopupContext"
-import type { GameMode } from "@/services/playerService"
 import { getAvatarUrl, handleAvatarError } from "@/utils/avatarUtils"
 import { useIsMobile } from "@/hooks/use-mobile"
-import { mapGameModeToDatabase } from "@/services/playerService"
 
 // Helper to get device icon
 const getDeviceIcon = (device = "PC", isMobile = false) => {
@@ -98,8 +96,8 @@ export function ModernResultPopup() {
   const region = popupData.player.region || "NA"
   const regionStyling = getRegionStyling(region)
 
-  // Updated to use new 7 gamemodes
-  const orderedGamemodes: GameMode[] = ["Skywars", "Midfight", "Bridge", "Crystal", "Sumo", "Nodebuff", "Bedfight"]
+  // Updated to use new 7 gamemodes - these should match the display names
+  const orderedGamemodes = ["Skywars", "Midfight", "Bridge", "Crystal", "Sumo", "Nodebuff", "Bedfight"]
 
   const handleOverlayClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
@@ -107,22 +105,26 @@ export function ModernResultPopup() {
     }
   }
 
-  const getTierData = (mode: GameMode) => {
-    // Map the frontend display mode to the database mode
-    const dbMode = mapGameModeToDatabase(mode)
-
+  const getTierData = (mode: string) => {
     // Find the actual tier for this gamemode from player data
-    const playerTier = popupData.tierAssignments.find((assignment) => {
-      // Try exact match first, then case-insensitive match
-      return (
-        assignment.gamemode === dbMode ||
-        assignment.gamemode.toLowerCase() === dbMode.toLowerCase() ||
-        assignment.gamemode === mode ||
-        assignment.gamemode.toLowerCase() === mode.toLowerCase()
-      )
-    })
+    // Try multiple variations of the gamemode name to handle database inconsistencies
+    const possibleModes = [
+      mode, // exact match
+      mode.toLowerCase(), // lowercase
+      mode.toUpperCase(), // uppercase
+    ]
 
-    console.log(`Getting tier data for ${mode} (mapped to ${dbMode}):`, playerTier)
+    let playerTier = null
+
+    // Try to find a matching tier assignment
+    for (const modeVariation of possibleModes) {
+      playerTier = popupData.tierAssignments.find(
+        (assignment) => assignment.gamemode.toLowerCase() === modeVariation.toLowerCase(),
+      )
+      if (playerTier) break
+    }
+
+    console.log(`Getting tier data for ${mode}:`, playerTier)
 
     if (playerTier && playerTier.tier && playerTier.tier !== "Not Ranked") {
       const tierMap: Record<string, { code: string; color: string; gradient: string }> = {
