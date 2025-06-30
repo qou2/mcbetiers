@@ -2,17 +2,17 @@
 
 import type React from "react"
 import { useState, useEffect } from "react"
+import NewAdminAuth from "./NewAdminAuth"
 import { newAdminService } from "@/services/newAdminService"
-import { NewAdminAuth } from "./NewAdminAuth"
 
 interface NewAdminProtectedRouteProps {
-  children: React.ReactNode
+  children: (userRole: string) => React.ReactNode
 }
 
-export const NewAdminProtectedRoute: React.FC<NewAdminProtectedRouteProps> = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false)
-  const [isLoading, setIsLoading] = useState<boolean>(true)
-  const [userRole, setUserRole] = useState<string | null>(null)
+const NewAdminProtectedRoute: React.FC<NewAdminProtectedRouteProps> = ({ children }) => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [userRole, setUserRole] = useState<string>("")
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     checkAuthentication()
@@ -20,18 +20,20 @@ export const NewAdminProtectedRoute: React.FC<NewAdminProtectedRouteProps> = ({ 
 
   const checkAuthentication = async () => {
     try {
-      const accessResult = await newAdminService.checkAdminAccess()
+      const sessionToken = localStorage.getItem("admin_session_token")
 
-      if (accessResult.hasAccess && accessResult.role) {
-        setIsAuthenticated(true)
-        setUserRole(accessResult.role)
-      } else {
-        setIsAuthenticated(false)
-        setUserRole(null)
+      if (sessionToken) {
+        const isValid = await newAdminService.verifyAdminSession(sessionToken)
+        if (isValid) {
+          const result = await newAdminService.checkAdminAccess()
+          if (result.hasAccess && result.role) {
+            setIsAuthenticated(true)
+            setUserRole(result.role)
+          }
+        }
       }
     } catch (error) {
-      setIsAuthenticated(false)
-      setUserRole(null)
+      // Silent fail - user will see login screen
     } finally {
       setIsLoading(false)
     }
@@ -54,5 +56,7 @@ export const NewAdminProtectedRoute: React.FC<NewAdminProtectedRouteProps> = ({ 
     return <NewAdminAuth onAuthSuccess={handleAuthSuccess} />
   }
 
-  return <>{children}</>
+  return <>{children(userRole)}</>
 }
+
+export default NewAdminProtectedRoute
