@@ -1,7 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
-export type GameMode = 'Crystal' | 'Sword' | 'Mace' | 'Axe' | 'SMP' | 'UHC' | 'NethPot' | 'Bedwars';
+export type GameMode = 'Crystal' | 'Mifight' | 'Skywars' | 'Bridge' | 'Nodebuff' | 'UHC' | 'Sumo' | 'Bedfight';
 export type TierLevel = 'HT1' | 'LT1' | 'HT2' | 'LT2' | 'HT3' | 'LT3' | 'HT4' | 'LT4' | 'HT5' | 'LT5' | 'Retired' | 'Not Ranked';
 export type PlayerRegion = 'NA' | 'EU' | 'ASIA' | 'OCE' | 'SA' | 'AF';
 export type DeviceType = 'PC' | 'Mobile' | 'Console';
