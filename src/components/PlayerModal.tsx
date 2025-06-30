@@ -20,7 +20,7 @@ interface PlayerModalProps {
 export function PlayerModal({ isOpen, onClose, player }: PlayerModalProps) {
   const [playerTiers, setPlayerTiers] = useState<Record<GameMode, { tier: TierLevel; score: number }>>({} as any)
 
-  // Calculate player rank based on points
+  
   const playerPoints = Number(player?.global_points || player?.points || 0)
   const rankInfo = getPlayerRank(playerPoints)
 
