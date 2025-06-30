@@ -158,11 +158,28 @@ export function PlayerModal({ isOpen, onClose, player }: PlayerModalProps) {
             <div className="grid grid-cols-4 gap-2">
               {allGamemodes.map((mode, index) => {
                 // Find tier assignment for this gamemode from player data
-                // Check both capitalized and lowercase versions for compatibility
-                const tierAssignment = player.tierAssignments?.find(
-                  (assignment: any) =>
-                    assignment.gamemode.toLowerCase() === mode.toLowerCase() || assignment.gamemode === mode,
-                )
+                // Check multiple variations to ensure compatibility
+                const tierAssignment = player.tierAssignments?.find((assignment: any) => {
+                  const assignmentMode = assignment.gamemode?.toLowerCase()
+                  const targetMode = mode.toLowerCase()
+
+                  // Direct match
+                  if (assignmentMode === targetMode) return true
+
+                  // Handle specific gamemode mappings
+                  const gamemodeMap: Record<string, string[]> = {
+                    skywars: ["skywars", "skywar"],
+                    midfight: ["midfight", "mid"],
+                    bridge: ["bridge"],
+                    crystal: ["crystal", "crystalpvp"],
+                    sumo: ["sumo"],
+                    nodebuff: ["nodebuff", "nb"],
+                    bedfight: ["bedfight", "bed"],
+                  }
+
+                  const possibleNames = gamemodeMap[targetMode] || [targetMode]
+                  return possibleNames.includes(assignmentMode)
+                })
 
                 const tier = tierAssignment?.tier || "Not Ranked"
                 const displayTier = tier === "Not Ranked" ? "NR" : tier
