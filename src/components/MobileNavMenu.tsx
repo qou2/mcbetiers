@@ -21,14 +21,14 @@ export function MobileNavMenu({ currentMode = 'overall' }: MobileNavMenuProps) {
 
   const gameModes = [
     { value: 'overall', label: 'Overall' },
+    { value: 'skywars', label: 'Skywars' },
+    { value: 'midfight', label: 'Midfight' },
+    { value: 'bridge', label: 'Bridge' },
     { value: 'crystal', label: 'Crystal' },
-    { value: 'sword', label: 'Sword' },
-    { value: 'smp', label: 'SMP' },
+    { value: 'sumo', label: 'Sumo' },
+    { value: 'nodebuff', label: 'Nodebuff' },
+    { value: 'bedfight', label: 'Bedfight' },
     { value: 'uhc', label: 'UHC' },
-    { value: 'axe', label: 'Axe' },
-    { value: 'nethpot', label: 'NethPot' },
-    { value: 'bedwars', label: 'Bedwars' },
-    { value: 'mace', label: 'Mace' },
   ];
 
   const handleModeChange = (mode: string) => {
