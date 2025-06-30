@@ -18,7 +18,7 @@ export function GameModeIcon({ mode, className = "h-4 w-4" }: GameModeIconProps)
       case 'uhc':
         return '/lovable-uploads/afc839db-dab2-4fd5-b5e6-f9e9e33c0cdc.png';
       case 'nodebuff':
-        return '/lovable-uploads/a92e08fa-4d88-4654-a0eb-db5fdd777176.png';
+        return '/lovable-uploads/pot.png';
       case 'bedfight':
         return '/lovable-uploads/b099b583-75a2-44b4-bede-18b063e47d28.png';
       case 'axe':
