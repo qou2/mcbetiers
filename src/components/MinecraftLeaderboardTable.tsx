@@ -8,8 +8,6 @@ import { Monitor, Smartphone, Gamepad } from "lucide-react"
 import { getPlayerRank } from "@/utils/rankUtils"
 import { getAvatarUrl, handleAvatarError } from "@/utils/avatarUtils"
 import { useIsMobile } from "@/hooks/use-mobile"
-import { PlayerRow } from "./PlayerRow"
-import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
 interface MinecraftLeaderboardTableProps {
   players: Player[]
@@ -123,9 +121,6 @@ export const MinecraftLeaderboardTable: React.FC<MinecraftLeaderboardTableProps>
     onPlayerClick(player)
   }
 
-  // New gamemodes list
-  const gameModes = ["Skywars", "Midfight", "Bridge", "Crystal", "Sumo", "Nodebuff", "Bedfight"]
-
   if (isMobile) {
     return (
       <div className="w-full space-y-2">
@@ -184,13 +179,21 @@ export const MinecraftLeaderboardTable: React.FC<MinecraftLeaderboardTableProps>
               </div>
 
               <div className="flex items-center justify-center gap-1.5 pt-2 border-t border-white/10">
-                {gameModes.map((mode) => {
-                  const tier = getPlayerTierForGamemode(player, mode)
+                {[
+                  { mode: "skywars", gamemode: "Skywars" },
+                  { mode: "midfight", gamemode: "Midfight" },
+                  { mode: "bridge", gamemode: "Bridge" },
+                  { mode: "crystal", gamemode: "Crystal" },
+                  { mode: "sumo", gamemode: "Sumo" },
+                  { mode: "nodebuff", gamemode: "Nodebuff" },
+                  { mode: "bedfight", gamemode: "Bedfight" },
+                ].map(({ mode, gamemode }) => {
+                  const tier = getPlayerTierForGamemode(player, gamemode)
 
                   return (
                     <div key={mode} className="flex flex-col items-center">
                       <div className="w-6 h-6 rounded bg-gray-700/70 border border-gray-500/20 flex items-center justify-center mb-1">
-                        <GameModeIcon mode={mode.toLowerCase()} className="w-3 h-3" />
+                        <GameModeIcon mode={mode} className="w-3 h-3" />
                       </div>
                       <div
                         className={`px-1 py-0.5 rounded text-xs font-bold ${getTierBadgeColor(tier)} min-w-[20px] text-center`}
@@ -209,47 +212,103 @@ export const MinecraftLeaderboardTable: React.FC<MinecraftLeaderboardTableProps>
   }
 
   return (
-    <div className="w-full overflow-hidden rounded-lg border border-white/10 bg-black/20 backdrop-blur-sm">
-      <Table>
-        <TableHeader>
-          <TableRow className="border-white/10 hover:bg-transparent">
-            <TableHead className="text-white/60 font-medium w-12">#</TableHead>
-            <TableHead className="text-white/60 font-medium">Player</TableHead>
-            <TableHead className="text-white/60 font-medium text-center">Country</TableHead>
-            <TableHead className="text-white/60 font-medium text-center">Device</TableHead>
-            {gameModes.map((mode) => (
-              <TableHead key={mode} className="text-white/60 font-medium text-center min-w-[80px]">
-                <div className="flex flex-col items-center gap-1">
-                  <GameModeIcon mode={mode.toLowerCase()} className="h-6 w-6" />
-                  <span className="text-xs">{mode}</span>
-                </div>
-              </TableHead>
-            ))}
-            <TableHead className="text-white/60 font-medium text-right">Points</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {players.map((player, index) => (
-            <TableRow
+    <div className="w-full bg-dark-surface/50 rounded-xl overflow-hidden border border-white/20">
+      <div className="grid grid-cols-12 gap-6 px-6 py-4 text-sm font-bold text-white/80 border-b border-white/10 bg-dark-surface/70">
+        <div className="col-span-1"></div>
+        <div className="col-span-4">PLAYER</div>
+        <div className="col-span-2 text-center">REGION</div>
+        <div className="col-span-5 text-center">TIERS</div>
+      </div>
+
+      <div className="divide-y divide-white/5">
+        {players.map((player, index) => {
+          const playerPoints = player.global_points || 0
+          const rankInfo = getPlayerRank(playerPoints)
+          const regionStyle = getRegionStyling(player.region)
+          const rankBadge = getRankBadgeStyle(index + 1)
+
+          return (
+            <div
               key={player.id}
-              className="border-white/5 hover:bg-white/5 cursor-pointer transition-colors"
-              onClick={() => onPlayerClick(player)}
+              className="grid grid-cols-12 gap-6 px-6 py-4 cursor-pointer hover:bg-white/5 transform-none"
+              onClick={() => handlePlayerRowClick(player)}
             >
-              <PlayerRow
-                position={index + 1}
-                displayName={player.ign}
-                avatar={player.avatar_url}
-                country={player.region}
-                device={player.device}
-                points={player.global_points}
-                onClick={() => onPlayerClick(player)}
-                gameModes={gameModes}
-                tierAssignments={player.tierAssignments || []}
-              />
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+              <div className="col-span-1 flex items-center">
+                <div
+                  className={`
+                  w-12 h-12 flex items-center justify-center rounded-xl text-base font-bold
+                  ${rankBadge.gradient} ${rankBadge.text}
+                `}
+                >
+                  {index + 1}
+                </div>
+              </div>
+
+              <div className="col-span-4 flex items-center gap-4">
+                <Avatar className="w-14 h-14 border-2 border-white/20">
+                  <AvatarImage
+                    src={player.avatar_url || getAvatarUrl(player.ign, player.java_username)}
+                    alt={player.ign}
+                    onError={(e) => handleAvatarError(e, player.ign, player.java_username)}
+                  />
+                  <AvatarFallback className="bg-gray-700 text-white font-bold">{player.ign.charAt(0)}</AvatarFallback>
+                </Avatar>
+
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-3 mb-1">
+                    {getDeviceIcon(player.device)}
+                    <span className="text-white font-bold text-lg">{player.ign}</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className={`text-sm font-bold ${rankInfo.color}`}>◆ {rankInfo.title}</span>
+                    <span className="text-white/60 text-sm font-medium">({playerPoints} points)</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="col-span-2 flex items-center justify-center">
+                <span
+                  className={`
+                  px-4 py-2 rounded-full text-sm font-bold
+                  ${regionStyle.bgGradient} ${regionStyle.textColor}
+                `}
+                >
+                  {player.region || "NA"}
+                </span>
+              </div>
+
+              <div className="col-span-5 flex items-center justify-center">
+                <div className="flex items-center gap-4">
+                  {[
+                    { mode: "skywars", gamemode: "Skywars" },
+                    { mode: "midfight", gamemode: "Midfight" },
+                    { mode: "bridge", gamemode: "Bridge" },
+                    { mode: "crystal", gamemode: "Crystal" },
+                    { mode: "sumo", gamemode: "Sumo" },
+                    { mode: "nodebuff", gamemode: "Nodebuff" },
+                    { mode: "bedfight", gamemode: "Bedfight" },
+                  ].map(({ mode, gamemode }) => {
+                    const tier = getPlayerTierForGamemode(player, gamemode)
+
+                    return (
+                      <div key={mode} className="flex flex-col items-center">
+                        <div className="w-9 h-9 rounded-lg bg-gray-700/70 border border-gray-500/20 flex items-center justify-center mb-1.5">
+                          <GameModeIcon mode={mode} className="w-4 h-4" />
+                        </div>
+                        <div
+                          className={`px-2 py-0.5 rounded text-xs font-bold ${getTierBadgeColor(tier)} min-w-[32px] text-center`}
+                        >
+                          {tier === "Not Ranked" ? "NR" : tier}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }
