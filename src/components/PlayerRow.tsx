@@ -2,6 +2,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Trophy } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { TableCell } from "@/components/ui/table"
+import { RankBadgeEffects, PositionBadge } from "./RankBadgeEffects"
 
 interface PlayerRowProps {
   id?: string
@@ -29,7 +30,7 @@ export function PlayerRow({
   position,
   displayName,
   avatar,
-  points,
+  points = 0,
   country,
   device,
   compact = false,
@@ -64,28 +65,46 @@ export function PlayerRow({
   return (
     <>
       <TableCell className="w-12">
-        <span className="text-white/40 text-sm font-mono">{position}</span>
+        {position && position <= 3 ? (
+          <PositionBadge position={position} points={points} size="sm" />
+        ) : (
+          <span className="text-white/40 text-sm font-mono">{position}</span>
+        )}
       </TableCell>
 
       <TableCell>
         <div className="flex items-center gap-3">
-          <Avatar className={cn("border-2 border-white/10", compact ? "h-8 w-8" : "h-10 w-10")}>
-            <AvatarImage src={avatar || "/placeholder.svg"} alt={displayName} />
-            <AvatarFallback>{displayName ? displayName.charAt(0) : "?"}</AvatarFallback>
-          </Avatar>
+          <div className="relative">
+            <Avatar className={cn("border-2 border-white/10", compact ? "h-8 w-8" : "h-10 w-10")}>
+              <AvatarImage src={avatar || "/placeholder.svg"} alt={displayName} />
+              <AvatarFallback className="bg-slate-700 text-white">
+                {displayName ? displayName.charAt(0) : "?"}
+              </AvatarFallback>
+            </Avatar>
+
+            {/* Animated rank badge overlay */}
+            <div className="absolute -top-1 -right-1">
+              <RankBadgeEffects points={points} size="sm" animated={true} />
+            </div>
+          </div>
 
           <div className="flex flex-col">
-            <span className={cn("font-medium", compact ? "text-sm" : "text-base")}>{displayName}</span>
+            <span className={cn("font-medium text-white", compact ? "text-sm" : "text-base")}>{displayName}</span>
+            {points >= 100 && (
+              <span className="text-xs text-yellow-400 font-semibold">
+                {points >= 400 ? "Grandmaster" : points >= 250 ? "Master" : points >= 100 ? "Ace" : ""}
+              </span>
+            )}
           </div>
         </div>
       </TableCell>
 
       <TableCell className="text-center">
-        <span className="text-sm">{country}</span>
+        <span className="text-sm text-white/70">{country}</span>
       </TableCell>
 
       <TableCell className="text-center">
-        <span className="text-sm">{device}</span>
+        <span className="text-sm text-white/70">{device}</span>
       </TableCell>
 
       {gameModes.map((mode) => {
@@ -98,9 +117,9 @@ export function PlayerRow({
       })}
 
       <TableCell className="text-right">
-        <div className={cn("flex items-center justify-end", compact ? "text-xs" : "text-sm")}>
-          <Trophy size={compact ? 12 : 14} className="mr-1 text-yellow-400" />
-          <span>{points}</span>
+        <div className={cn("flex items-center justify-end gap-2", compact ? "text-xs" : "text-sm")}>
+          <Trophy size={compact ? 12 : 14} className="text-yellow-400" />
+          <span className="text-white font-semibold">{points}</span>
         </div>
       </TableCell>
     </>
