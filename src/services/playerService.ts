@@ -46,8 +46,8 @@ export interface Player {
 
 // Updated tier points mapping for HT1-LT5 range with better calculation
 const TIER_POINTS: Record<TierLevel, number> = {
-  HT1: 60,
-  LT1: 45,
+  HT1: 65,
+  LT1: 50,
   HT2: 30,
   LT2: 20,
   HT3: 10,
