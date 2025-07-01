@@ -260,14 +260,6 @@ export function ManagePlayersTab() {
 
   console.log(`Rendering ManagePlayersTab with ${players.length} total players, ${filteredPlayers.length} filtered`)
 
-  const getPlayerTierForGamemode = (player: Player, gamemode: string): string => {
-    if (!player.tierAssignments) return "Not Ranked"
-
-    const assignment = player.tierAssignments.find((t) => t.gamemode === gamemode)
-
-    return assignment?.tier || "Not Ranked"
-  }
-
   return (
     <div className="space-y-6">
       <Card className="bg-gray-900/50 backdrop-blur-xl border-gray-700/50">
@@ -346,18 +338,18 @@ export function ManagePlayersTab() {
                       <TableCell>
                         <div className="flex flex-wrap gap-1">
                           {[
-                            { mode: "bridge", gamemode: "bridge", displayName: "Bridge" },
-                            { mode: "skywars", gamemode: "skywars", displayName: "Skywars" },
-                            { mode: "crystal", gamemode: "Crystal", displayName: "Crystal" },
-                            { mode: "midfight", gamemode: "midfight", displayName: "Midfight" },
-                            { mode: "uhc", gamemode: "uhc", displayName: "UHC" },
-                            { mode: "nodebuff", gamemode: "nodebuff", displayName: "Nodebuff" },
-                            { mode: "bedfight", gamemode: "bedfight", displayName: "Bedfight" },
-                            { mode: "sumo", gamemode: "sumo", displayName: "Sumo" },
-                          ].map(({ mode, gamemode, displayName }) => {
+                            { gamemode: "Crystal", displayName: "Crystal" },
+                            { gamemode: "midfight", displayName: "Midfight" },
+                            { gamemode: "skywars", displayName: "Skywars" },
+                            { gamemode: "UHC", displayName: "UHC" },
+                            { gamemode: "bridge", displayName: "Bridge" },
+                            { gamemode: "nodebuff", displayName: "Nodebuff" },
+                            { gamemode: "bedfight", displayName: "Bedfight" },
+                            { gamemode: "sumo", displayName: "Sumo" },
+                          ].map(({ gamemode, displayName }) => {
                             const isEditing =
                               editingGamemode?.playerId === player.id && editingGamemode?.gamemode === gamemode
-                            const currentTier = getPlayerTierForGamemode(player, gamemode)
+                            const currentTier = getPlayerTier(player, gamemode as GameMode)
 
                             return (
                               <div key={gamemode} className="flex items-center gap-1">
