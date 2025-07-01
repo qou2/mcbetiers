@@ -22,27 +22,24 @@ export function GameModeIcon({ mode, className = "h-4 w-4" }: GameModeIconProps)
       case 'bedfight':
         return '/lovable-uploads/b099b583-75a2-44b4-bede-18b063e47d28.png';
       case 'axe':
-        // New Axe icon (the uploaded image)
         return '/lovable-uploads/25e85709-efba-496e-b54c-8fa9f45f88c4.png';
       case 'smp':
-        // Using the previous Axe icon for SMP now
         return '/lovable-uploads/cce7c84c-7797-415f-a07b-7ccb735c0a5f.png';
       default:
         return '';
     }
   };
-  
+
   const iconPath = getIconPath();
-  
-  if (!iconPath) {
-    return null;
-  }
-  
+
+  if (!iconPath) return null;
+
   return (
     <img 
       src={iconPath}
       alt={`${mode} icon`}
       className={className}
+      style={{ objectFit: "contain" }} // ensures no weird stretching
     />
   );
 }
