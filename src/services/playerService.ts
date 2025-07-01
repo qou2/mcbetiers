@@ -8,6 +8,8 @@ export type GameMode =
   | "sumo"
   | "nodebuff"
   | "bedfight"
+  | "UHC"
+
 export type TierLevel =
   | "HT1"
   | "LT1"
