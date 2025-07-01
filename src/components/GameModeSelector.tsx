@@ -18,6 +18,8 @@ export function GameModeSelector({ selectedMode = "overall", onSelectMode }: Gam
     { id: "sumo", label: "Sumo" },
     { id: "nodebuff", label: "Nodebuff" },
     { id: "bedfight", label: "Bedfight" },
+    { id: "uhc", label: "UHC" },
+
   ]
 
   const currentMode = selectedMode?.toLowerCase() || "overall"
