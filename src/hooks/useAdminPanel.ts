@@ -61,7 +61,6 @@ export function useAdminPanel() {
       const tiersByPlayer = new Map<string, { gamemode: GameMode; tier: TierLevel; score: number }[]>()
 
       if (tierData) {
-        console.log("Raw tier data from database:", tierData)
         tierData.forEach((tier) => {
           if (!tiersByPlayer.has(tier.player_id)) {
             tiersByPlayer.set(tier.player_id, [])
@@ -72,25 +71,19 @@ export function useAdminPanel() {
             score: tier.score || 0,
           })
         })
-        console.log("Processed tier assignments by player:", Object.fromEntries(tiersByPlayer))
       }
 
-      const processedPlayers: Player[] = playersData.map((player, index) => {
-        const playerTiers = tiersByPlayer.get(player.id) || []
-        console.log(`Player ${player.ign} tier assignments:`, playerTiers)
-
-        return {
-          id: player.id,
-          ign: player.ign,
-          region: player.region || "NA",
-          device: player.device || "PC",
-          global_points: player.global_points || 0,
-          overall_rank: index + 1,
-          java_username: player.java_username,
-          avatar_url: player.avatar_url,
-          tierAssignments: playerTiers,
-        }
-      })
+      const processedPlayers: Player[] = playersData.map((player, index) => ({
+        id: player.id,
+        ign: player.ign,
+        region: player.region || "NA",
+        device: player.device || "PC",
+        global_points: player.global_points || 0,
+        overall_rank: index + 1,
+        java_username: player.java_username,
+        avatar_url: player.avatar_url,
+        tierAssignments: tiersByPlayer.get(player.id) || [],
+      }))
 
       setPlayers(processedPlayers)
       console.log(`Loaded ${processedPlayers.length} players for admin panel`)
@@ -171,12 +164,16 @@ export function useAdminPanel() {
       for (const result of results) {
         console.log(`Processing tier assignment: ${result.gamemode} -> ${result.tier}`)
 
+        // Map gamemode to database format - keep Crystal and UHC as-is, lowercase others
+        const dbGamemode =
+          result.gamemode === "Crystal" || result.gamemode === "UHC" ? result.gamemode : result.gamemode.toLowerCase()
+
         // Check if assignment exists
         const { data: existingAssignment } = await supabase
           .from("gamemode_scores")
           .select("id")
           .eq("player_id", playerId)
-          .eq("gamemode", result.gamemode.toLowerCase())
+          .eq("gamemode", dbGamemode)
           .single()
 
         if (existingAssignment) {
@@ -199,7 +196,7 @@ export function useAdminPanel() {
           // Create new assignment
           const { error: createError } = await supabase.from("gamemode_scores").insert({
             player_id: playerId,
-            gamemode: result.gamemode.toLowerCase(),
+            gamemode: dbGamemode,
             internal_tier: result.tier,
             display_tier: result.tier,
             score: result.points,
@@ -241,12 +238,15 @@ export function useAdminPanel() {
     try {
       console.log(`Updating player ${playerId} tier for ${gamemode} to ${newTier}`)
 
+      // Map gamemode to database format - keep Crystal and UHC as-is, lowercase others
+      const dbGamemode = gamemode === "Crystal" || gamemode === "UHC" ? gamemode : gamemode.toLowerCase()
+
       // Check if assignment exists
       const { data: existingAssignment } = await supabase
         .from("gamemode_scores")
         .select("id")
         .eq("player_id", playerId)
-        .eq("gamemode", gamemode.toLowerCase())
+        .eq("gamemode", dbGamemode)
         .single()
 
       if (existingAssignment) {
@@ -265,7 +265,7 @@ export function useAdminPanel() {
         // Create new assignment
         const { error } = await supabase.from("gamemode_scores").insert({
           player_id: playerId,
-          gamemode: gamemode.toLowerCase(),
+          gamemode: dbGamemode,
           internal_tier: newTier,
           display_tier: newTier,
           score: 0,
