@@ -25,7 +25,8 @@ const gameModes = [
   { key: "Sumo", name: "Sumo", color: "from-yellow-500 to-yellow-600", textColor: "text-yellow-400" },
   { key: "Nodebuff", name: "Nodebuff", color: "from-cyan-500 to-cyan-600", textColor: "text-cyan-400" },
   { key: "Bedfight", name: "Bedfight", color: "from-orange-500 to-orange-600", textColor: "text-orange-400" },
-]
+  { key: "UHC", name: "UHC", color: "from-amber-500 to-amber-600", textColor: "text-amber-400" },
+];
 
 export function SubmitResultsForm() {
   const { submitPlayerResults, loading } = useAdminPanel()
