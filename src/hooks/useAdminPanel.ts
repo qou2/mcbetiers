@@ -61,6 +61,7 @@ export function useAdminPanel() {
       const tiersByPlayer = new Map<string, { gamemode: GameMode; tier: TierLevel; score: number }[]>()
 
       if (tierData) {
+        console.log("Raw tier data from database:", tierData)
         tierData.forEach((tier) => {
           if (!tiersByPlayer.has(tier.player_id)) {
             tiersByPlayer.set(tier.player_id, [])
@@ -71,19 +72,25 @@ export function useAdminPanel() {
             score: tier.score || 0,
           })
         })
+        console.log("Processed tier assignments by player:", Object.fromEntries(tiersByPlayer))
       }
 
-      const processedPlayers: Player[] = playersData.map((player, index) => ({
-        id: player.id,
-        ign: player.ign,
-        region: player.region || "NA",
-        device: player.device || "PC",
-        global_points: player.global_points || 0,
-        overall_rank: index + 1,
-        java_username: player.java_username,
-        avatar_url: player.avatar_url,
-        tierAssignments: tiersByPlayer.get(player.id) || [],
-      }))
+      const processedPlayers: Player[] = playersData.map((player, index) => {
+        const playerTiers = tiersByPlayer.get(player.id) || []
+        console.log(`Player ${player.ign} tier assignments:`, playerTiers)
+
+        return {
+          id: player.id,
+          ign: player.ign,
+          region: player.region || "NA",
+          device: player.device || "PC",
+          global_points: player.global_points || 0,
+          overall_rank: index + 1,
+          java_username: player.java_username,
+          avatar_url: player.avatar_url,
+          tierAssignments: playerTiers,
+        }
+      })
 
       setPlayers(processedPlayers)
       console.log(`Loaded ${processedPlayers.length} players for admin panel`)
