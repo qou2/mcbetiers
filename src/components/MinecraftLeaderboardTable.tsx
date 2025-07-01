@@ -180,7 +180,7 @@ export const MinecraftLeaderboardTable: React.FC<MinecraftLeaderboardTableProps>
 
               <div className="flex items-center justify-center gap-1.5 pt-2 border-t border-white/10">
                 {[
-                  { mode: 'mace', gamemode: 'Mace' },
+                  { mode: 'bridge', gamemode: 'Bridge' },
                   { mode: 'skywars', gamemode: 'Skywars' },
                   { mode: 'crystal', gamemode: 'Crystal' },
                   { mode: 'midfight', gamemode: 'Midfight' },
@@ -282,7 +282,7 @@ export const MinecraftLeaderboardTable: React.FC<MinecraftLeaderboardTableProps>
               <div className="col-span-5 flex items-center justify-center">
                 <div className="flex items-center gap-4">
                   {[
-                  { mode: 'mace', gamemode: 'Mace' },
+                  { mode: 'bridge', gamemode: 'Bridge' },
                   { mode: 'skywars', gamemode: 'Skywars' },
                   { mode: 'crystal', gamemode: 'Crystal' },
                   { mode: 'midfight', gamemode: 'Midfight' },
