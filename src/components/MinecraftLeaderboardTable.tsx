@@ -181,13 +181,13 @@ export const MinecraftLeaderboardTable: React.FC<MinecraftLeaderboardTableProps>
               <div className="flex items-center justify-center gap-1.5 pt-2 border-t border-white/10">
                 {[
                   { mode: 'mace', gamemode: 'Mace' },
-                  { mode: 'sword', gamemode: 'Sword' },
+                  { mode: 'skywars', gamemode: 'Skywars' },
                   { mode: 'crystal', gamemode: 'Crystal' },
-                  { mode: 'axe', gamemode: 'Axe' },
+                  { mode: 'midfight', gamemode: 'Midfight' },
                   { mode: 'uhc', gamemode: 'UHC' },
-                  { mode: 'smp', gamemode: 'SMP' },
-                  { mode: 'nethpot', gamemode: 'NethPot' },
-                  { mode: 'bedwars', gamemode: 'Bedwars' }
+                  { mode: 'nodebuff', gamemode: 'Nodebuff' },
+                  { mode: 'bedfight', gamemode: 'Bedfight' },
+                  { mode: 'sumo', gamemode: 'Sumo' }
                 ].map(({ mode, gamemode }) => {
                   const tier = getPlayerTierForGamemode(player, gamemode);
                   
