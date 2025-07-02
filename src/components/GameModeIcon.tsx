@@ -21,6 +21,8 @@ export function GameModeIcon({ mode, className = "h-4 w-4" }: GameModeIconProps)
         return '/lovable-uploads/pot.png';
       case 'bedfight':
         return '/lovable-uploads/b099b583-75a2-44b4-bede-18b063e47d28.png';
+      case 'sumo':
+        return '/lovable-uploads/sumo.png';
       case 'axe':
         return '/lovable-uploads/25e85709-efba-496e-b54c-8fa9f45f88c4.png';
       case 'smp':
