@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState, useCallback, useMemo } from "react"
@@ -12,9 +13,6 @@ import type { GameMode, Player } from "../services/playerService"
 import { toDatabaseGameMode } from "@/utils/gamemodeCasing"
 import { getPlayerRank } from "@/utils/rankUtils"
 import { usePointsCalculation } from "@/hooks/usePointsCalculation"
-import { FloatingChatButton } from "../components/FloatingChatButton"
-import WelcomePopup from "../components/WelcomePopup"
-import { useWelcomePopup } from "../hooks/useWelcomePopup"
 
 const Index = () => {
   const navigate = useNavigate()
@@ -22,7 +20,6 @@ const Index = () => {
 
   const { players, loading: leaderboardLoading, error: leaderboardError } = useLeaderboard()
   const { openPopup } = usePopup()
-  const { showWelcome, visitorNumber, closeWelcome } = useWelcomePopup()
 
   // Enable automatic points calculation
   usePointsCalculation()
@@ -102,12 +99,6 @@ const Index = () => {
       </main>
 
       <Footer />
-
-      {/* Floating Chat Button */}
-      <FloatingChatButton />
-
-      {/* Welcome Popup - One time only */}
-      <WelcomePopup isOpen={showWelcome} onClose={closeWelcome} visitorNumber={visitorNumber} />
     </div>
   )
 }
